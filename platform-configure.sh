@@ -3,6 +3,7 @@ set -e
 DOCKER=$(which docker)
 REGISTRY="experimentalplatform"
 CONTAINER_NAME="configure"
+CHANNEL_FILE=/etc/protonet/system/channel
 
 REBOOT=false
 RELOAD=false
@@ -72,8 +73,13 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 if [ -z "$TAG" ]; then
-  echo "Update to newest Tag is not implemented yet! Please specify tag via --tag option and run again!"
-  exit 1
+  if [ -e $CHANNEL_FILE ]; then
+    TAG=$(cat $CHANNEL_FILE)
+    echo "Using tag '$TAG' from $CHANNEL_FILE."
+  else
+    TAG=stable
+    echo "No tag given. Using tag '$TAG' (default tag)."
+  fi
 fi
 
 download_and_verify_image $REGISTRY/configure:$TAG
@@ -95,6 +101,9 @@ IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.se
 for IMAGE in $IMAGES; do
   download_and_verify_image $IMAGE
 done
+
+mkdir -p $(dirname $CHANNEL_FILE)
+echo $TAG > $CHANNEL_FILE
 
 if [ "$RELOAD" = true ]; then
   echo "Reloading systemctl after update."
