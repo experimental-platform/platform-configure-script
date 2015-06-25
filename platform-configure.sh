@@ -10,11 +10,11 @@ RELOAD=false
 DEBUG=false
 
 function print_usage() {
-  echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-t|--tag tag]"
+  echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
   echo "Flags:"
   echo -e "\t-r|--reboot\tReboot after update finished."
   echo -e "\t-l|--reload\tTry to soft reload all services."
-  echo -e "\t-t|--tag\tUpdate to specified tag (default updates to newest version)."
+  echo -e "\t-c|--channel\tUse specified channel (default 'stable')."
   echo -e "\t-d|--debug\tEnable debug output."
   echo -e "\t-h|--help\tShow this help text."
 }
@@ -48,8 +48,8 @@ while [[ $# > 0 ]]; do
     -d|--debug)
       DEBUG=true
       ;;
-    -t|--tag)
-      TAG="$2"
+    -c|--channel)
+      CHANNEL="$2"
       shift
       ;;
     -h|--help)
@@ -72,17 +72,17 @@ if [ "$(id -u)" != "0" ]; then
   exit 2
 fi
 
-if [ -z "$TAG" ]; then
+if [ -z "$CHANNEL" ]; then
   if [ -e $CHANNEL_FILE ]; then
-    TAG=$(cat $CHANNEL_FILE)
-    echo "Using tag '$TAG' from $CHANNEL_FILE."
+    CHANNEL=$(cat $CHANNEL_FILE)
+    echo "Using channel '$CHANNEL' from $CHANNEL_FILE."
   else
-    TAG=stable
-    echo "No tag given. Using tag '$TAG' (default tag)."
+    CHANNEL=stable
+    echo "No channel given. Using '$CHANNEL' (default channel)."
   fi
 fi
 
-download_and_verify_image $REGISTRY/configure:$TAG
+download_and_verify_image $REGISTRY/configure:$CHANNEL
 
 # clean up running update task!
 $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
@@ -91,7 +91,7 @@ $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
 $DOCKER run --rm --name=$CONTAINER_NAME \
             --volume=/etc/:/data/ \
             --volume=/opt/bin/:/host-bin/ \
-            $REGISTRY/configure:$TAG
+            $REGISTRY/configure:$CHANNEL
 
 find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
 
@@ -103,7 +103,7 @@ for IMAGE in $IMAGES; do
 done
 
 mkdir -p $(dirname $CHANNEL_FILE)
-echo $TAG > $CHANNEL_FILE
+echo $CHANNEL > $CHANNEL_FILE
 
 if [ "$RELOAD" = true ]; then
   echo "Reloading systemctl after update."
