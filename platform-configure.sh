@@ -4,6 +4,7 @@ DOCKER=$(which docker)
 REGISTRY="experimentalplatform"
 CONTAINER_NAME="configure"
 CHANNEL_FILE=/etc/protonet/system/channel
+IMAGE_STATE_DIR=/etc/protonet/system/images
 
 REBOOT=false
 RELOAD=false
@@ -34,6 +35,11 @@ function download_and_verify_image() {
       exit 1
     fi
   done
+
+  local image_id=$(docker images | awk "(\$1 \":\" \$2) == \"$image\" {print \$3}")
+  image=${image#$REGISTRY/} # remove Registry prefix
+  image=${image%:*}      # remove tag suffix
+  echo $image_id > $IMAGE_STATE_DIR/$image
 }
 
 while [[ $# > 0 ]]; do
@@ -71,6 +77,8 @@ if [ "$(id -u)" != "0" ]; then
   echo "Can not run without root pemissions."
   exit 2
 fi
+
+mkdir -p $IMAGE_STATE_DIR
 
 if [ -z "$CHANNEL" ]; then
   if [ -e $CHANNEL_FILE ]; then
