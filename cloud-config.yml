@@ -1,0 +1,25 @@
+#cloud-config
+hostname: experimental-platform
+
+coreos:
+  update:
+    reboot-strategy: off
+  units:
+    - name: experimental-platform-install.service
+      command: start
+      content: |
+        [Unit]
+        Description=Install Experimental Platform
+        ConditionFirstBoot=yes
+
+        [Service]
+        Type=oneshot
+        KillMode=none
+        ExecStart=/bin/bash -c 'curl https://git.protorz.net/AAL/platform-configure-script/blob/development/platform-configure.sh | CHANNEL=development sh'
+users:
+  - name: platform
+    # Change this! see: https://github.com/coreos/coreos-cloudinit/blob/master/Documentation/cloud-config.md#generating-a-password-hash
+    passwd: $1$C3IPO/Q4$rh9psb.DS/2exW4mXaek50
+    groups:
+      - sudo
+      - docker
