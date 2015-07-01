@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 DOCKER=$(which docker)
 REGISTRY="experimentalplatform"
 CONTAINER_NAME="configure"
