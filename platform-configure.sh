@@ -102,7 +102,7 @@ $DOCKER run --rm --name=$CONTAINER_NAME \
 
 find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
 # .path files need to be started!
-find /etc/systemd/system -maxdepth 1 -name "*.path" -type f -exec systemctl restart {} +
+find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
 
 # Pre-Fetch all Images
 # Complex regexp to find all images names in all service files
