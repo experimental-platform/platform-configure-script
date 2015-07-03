@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 DOCKER=$(which docker)
 REGISTRY="experimentalplatform"
 CONTAINER_NAME="configure"
@@ -99,6 +100,10 @@ $DOCKER run --rm --name=$CONTAINER_NAME \
             --volume=/etc/:/data/ \
             --volume=/opt/bin/:/host-bin/ \
             $REGISTRY/configure:$CHANNEL
+
+# Make sure we're actually waiting for the network if it's required.
+systemctl enable systemd-networkd-wait-online.service
+
 
 find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
 # .path files need to be started!
