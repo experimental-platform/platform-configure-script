@@ -39,6 +39,8 @@ function download_and_verify_image() {
 
   local image_id=$(docker images | awk "(\$1 \":\" \$2) == \"$image\" {print \$3}")
   image=${image#$REGISTRY/} # remove Registry prefix
+
+  mkdir -p $(dirname $IMAGE_STATE_DIR/$image)
   echo $image_id > $IMAGE_STATE_DIR/$image
 }
 
