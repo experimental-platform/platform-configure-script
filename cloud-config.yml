@@ -15,7 +15,7 @@ coreos:
         [Service]
         Type=oneshot
         KillMode=none
-        ExecStart=/bin/bash -c 'curl https://git.protorz.net/AAL/platform-configure-script/blob/development/platform-configure.sh | CHANNEL=development sh'
+        ExecStart=/bin/bash -c 'curl https://git.protorz.net/AAL/platform-configure-script/raw/master/platform-configure.sh | CHANNEL=development sh'
 users:
   - name: platform
     # Change this! see: https://github.com/coreos/coreos-cloudinit/raw/master/Documentation/cloud-config.md#generating-a-password-hash
