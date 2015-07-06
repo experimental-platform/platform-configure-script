@@ -92,6 +92,9 @@ fi
 
 download_and_verify_image $REGISTRY/configure:$CHANNEL
 
+# required in init-protonet.service:
+download_and_verify_image ibuildthecloud/systemd-docker
+
 # clean up running update task!
 $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
 $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
@@ -103,9 +106,6 @@ $DOCKER run --rm --name=$CONTAINER_NAME \
 
 # Make sure we're actually waiting for the network if it's required.
 systemctl enable systemd-networkd-wait-online.service
-# TODO/technical debt: if the image doesn't exist, the first startup will time out
-docker pull ibuildthecloud/systemd-docker
-
 
 find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
 # .path files need to be started!
