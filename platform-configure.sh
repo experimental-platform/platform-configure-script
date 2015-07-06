@@ -103,6 +103,8 @@ $DOCKER run --rm --name=$CONTAINER_NAME \
 
 # Make sure we're actually waiting for the network if it's required.
 systemctl enable systemd-networkd-wait-online.service
+# TODO/technical debt: if the image doesn't exist, the first startup will time out
+docker pull ibuildthecloud/systemd-docker
 
 
 find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
