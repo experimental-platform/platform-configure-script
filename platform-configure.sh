@@ -44,6 +44,9 @@ function download_and_verify_image() {
   echo $image_id > $IMAGE_STATE_DIR/$image
 }
 
+touch /var/run/protonet_updating
+
+
 while [[ $# > 0 ]]; do
   key="$1"
   case $key in
@@ -126,6 +129,7 @@ echo $CHANNEL > $CHANNEL_FILE
 if [ "$RELOAD" = true ]; then
   echo "Reloading systemctl after update."
   systemctl restart init-protonet.service
+  rm -f /var/run/protonet_updating
   exit 0
 fi
 
@@ -134,3 +138,4 @@ if [ "$REBOOT" = true ]; then
   shutdown --reboot "Rebooting system for experimental-platform update."
   exit 0
 fi
+rm -f /var/run/protonet_updating
