@@ -9,7 +9,7 @@ IMAGE_STATE_DIR=/etc/protonet/system/images
 
 REBOOT=false
 RELOAD=false
-DEBUG=false
+DEBUG=true
 
 function print_usage() {
   echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
