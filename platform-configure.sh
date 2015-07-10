@@ -131,6 +131,6 @@ fi
 
 if [ "$REBOOT" = true ]; then
   echo "Rebooting after update."
-  shutdown --reboot "Rebooting system for experimental-platform update."
+  shutdown --reboot now "Rebooting system for experimental-platform update."
   exit 0
 fi
