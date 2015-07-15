@@ -1,5 +1,5 @@
 #cloud-config
-hostname: experimental-platform
+hostname: paleale
 
 coreos:
   update:
