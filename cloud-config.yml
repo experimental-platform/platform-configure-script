@@ -1,5 +1,4 @@
 #cloud-config
-hostname: paleale
 
 coreos:
   update:
