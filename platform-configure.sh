@@ -92,7 +92,7 @@ if [ -z "$CHANNEL" ]; then
   fi
 fi
 
-download_and_verify_image $REGISTRY/configure:$CHANNEL
+download_and_verify_image $REGISTRY/configure:${CHANNEL}
 
 # required in init-protonet.service:
 download_and_verify_image ibuildthecloud/systemd-docker
