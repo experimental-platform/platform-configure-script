@@ -94,7 +94,9 @@ fi
 
 download_and_verify_image $REGISTRY/configure:${CHANNEL}
 
-# required in init-protonet.service:
+# prefetch buildstep. so the first deployment doesn't have to fetch it.
+download_and_verify_image experimentalplatform/buildstep:${CHANNEL}
+
 # required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
 download_and_verify_image ibuildthecloud/systemd-docker
 
