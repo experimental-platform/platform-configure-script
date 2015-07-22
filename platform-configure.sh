@@ -95,6 +95,7 @@ fi
 download_and_verify_image $REGISTRY/configure:${CHANNEL}
 
 # required in init-protonet.service:
+# required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
 download_and_verify_image ibuildthecloud/systemd-docker
 
 # clean up running update task!
