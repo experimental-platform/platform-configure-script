@@ -55,6 +55,7 @@ function download_and_verify_image() {
   image=${image#$REGISTRY/} # remove Registry prefix
 
   mkdir -p $(dirname $IMAGE_STATE_DIR/$image)
+  # TODO: handle images w/ slashes like ibuildthecloud/systemd-docker:latest
   echo $image_id > $IMAGE_STATE_DIR/$image
 }
 
