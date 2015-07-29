@@ -109,12 +109,6 @@ fi
 
 download_and_verify_image $REGISTRY/configure:${CHANNEL}
 
-# prefetch buildstep. so the first deployment doesn't have to fetch it.
-download_and_verify_image experimentalplatform/buildstep:${CHANNEL}
-
-# required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
-download_and_verify_image ibuildthecloud/systemd-docker
-
 # clean up running update task!
 $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
 $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
@@ -131,15 +125,28 @@ find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enab
 # .path files need to be started!
 find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
 
+mkdir -p $(dirname $CHANNEL_FILE)
+echo $CHANNEL > $CHANNEL_FILE
+
+#
 # Pre-Fetch all Images
+#
+
+# When using a feature branch most images come from the development channel:
+available_channels="development alpha beta stable"
+if [[ ! ${available_channels} =~ ${CHANNEL} ]]; then
+  CHANNEL=development
+fi
+
+# prefetch buildstep. so the first deployment doesn't have to fetch it.
+download_and_verify_image experimentalplatform/buildstep:${CHANNEL}
+# required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
+download_and_verify_image ibuildthecloud/systemd-docker
 # Complex regexp to find all images names in all service files
 IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
 for IMAGE in $IMAGES; do
   download_and_verify_image $IMAGE
 done
-
-mkdir -p $(dirname $CHANNEL_FILE)
-echo $CHANNEL > $CHANNEL_FILE
 
 if [ "$RELOAD" = true ]; then
   echo "Reloading systemctl after update."
