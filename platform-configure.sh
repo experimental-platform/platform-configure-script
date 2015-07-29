@@ -97,14 +97,16 @@ fi
 
 mkdir -p $IMAGE_STATE_DIR
 
-if [ -z "$CHANNEL" ]; then
-  if [ -e $CHANNEL_FILE ]; then
-    CHANNEL=$(cat $CHANNEL_FILE)
-    echo "Using channel '$CHANNEL' from $CHANNEL_FILE."
+if [[ -z "${CHANNEL}" ]]; then
+  if [ -e ${CHANNEL_FILE} ]; then
+    CHANNEL=$(cat ${CHANNEL_FILE})
+    echo "Using channel '${CHANNEL}' from ${CHANNEL_FILE}."
   else
     CHANNEL=stable
-    echo "No channel given. Using '$CHANNEL' (default channel)."
+    echo "No channel given. Using '${CHANNEL}' (default channel)."
   fi
+else
+  "Using '${CHANNEL}' from the command line."
 fi
 
 download_and_verify_image $REGISTRY/configure:${CHANNEL}
@@ -135,6 +137,7 @@ echo $CHANNEL > $CHANNEL_FILE
 # When using a feature branch most images come from the development channel:
 available_channels="development alpha beta stable"
 if [[ ! ${available_channels} =~ ${CHANNEL} ]]; then
+  echo "We're on feature channel '${CHANNEL}'"
   CHANNEL=development
 fi
 
