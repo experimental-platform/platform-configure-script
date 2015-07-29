@@ -106,7 +106,7 @@ if [[ -z "${CHANNEL}" ]]; then
     echo "No channel given. Using '${CHANNEL}' (default channel)."
   fi
 else
-  "Using '${CHANNEL}' from the command line."
+  echo "Using '${CHANNEL}' from the command line."
 fi
 
 download_and_verify_image $REGISTRY/configure:${CHANNEL}
