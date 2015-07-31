@@ -1,7 +1,7 @@
 # Experimental Platform Configure Script
 
 
-## Simple Installation
+## Install in local VM
 
 Three steps:
 
@@ -16,6 +16,10 @@ Three steps:
 
 
 ### Step 1: Install Vagrant and VirtualBox
+
+* [Virtualbox](https://www.virtualbox.org/wiki/Downloads)
+* [Vagrant](https://www.vagrantup.com/downloads.html)
+
 
 ### Step 2: Start the VM
 
