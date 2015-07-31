@@ -1,9 +1,12 @@
 # Experimental Platform Configure Script
 
+Experimental Platform is a platform for local application development. It enables developers to `git push` source code to a local machine where it is executed automatically.
+
+As we're in the initial stages of the development we currently deliver a Vagrant based test environment. Please feel free to try it out. Feedback is always welcome!
 
 ## Install in local VM
 
-Three steps:
+Overview (details follow below):
 
 1. Install [Vagrant](https://www.vagrantup.com/downloads.html) and [Virtualbox](https://www.virtualbox.org/wiki/Downloads)
 2. Clone this repository and create the VM
@@ -13,15 +16,20 @@ Three steps:
 
 * at least 1 GByte of free RAM
 * roughly 5 GByte of free HD space
+* CoreOS beta channel
 
 
 ### Step 1: Install Vagrant and VirtualBox
 
-* [Virtualbox](https://www.virtualbox.org/wiki/Downloads)
-* [Vagrant](https://www.vagrantup.com/downloads.html)
+Vagrant is a VM manager widely used to create ad-hoc environments for testing. If you are not familiar with it please consult the documentation found on the following websites:
+
+* [Virtualbox](https://www.virtualbox.org)
+* [Vagrant](https://www.vagrantup.com)
 
 
 ### Step 2: Start the VM
+
+Platform installation is based on a running CoreOS instance. To simplify local testing we include a primitive `Vagrantfile` that should get you running in a few minutes.
 
     $ git clone https://github.com/orgs/experimental-platform/platform-configure-script.git
     $ cd platform-configure-script
@@ -31,4 +39,4 @@ Three steps:
 
     $ vagrant ssh -c "curl https://raw.githubusercontent.com/experimental-platform/platform-configure-script/master/platform-configure.sh | sudo CHANNEL=alpha sh"
 
-This step will install the software and then reboot the system. Depending oin the network configuration it might not come up on its own, in that case please start it manually with `vagrant up`. A few moments later the experimental platform web interface should be available under [http://paleale.local](paleale.local).
+This step will install the software and then reboot the system. Depending on the network configuration it might not come up on its own, in that case please start it manually with `vagrant up`. A few moments later the experimental platform web interface should be available under [http://paleale.local](paleale.local).
