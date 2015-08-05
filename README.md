@@ -4,6 +4,21 @@ Experimental Platform is a platform for local application development. It enable
 
 As we're in the initial stages of the development we currently deliver a Vagrant based test environment. Please feel free to try it out. Feedback is always welcome!
 
+## Install on existing hardware
+
+### Requirements
+
+* x86 based hardware
+* Linux
+* at least 1 GByte of free RAM
+* roughly 5 GByte of free HD space
+
+
+### Install
+
+    $ curl https://raw.githubusercontent.com/experimental-platform/platform-configure-script/master/platform-configure.sh | sudo CHANNEL=alpha sh
+
+
 ## Install in local VM
 
 Overview (details follow below):
