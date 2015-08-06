@@ -142,7 +142,7 @@ if [[ ! ${available_channels} =~ ${CHANNEL} ]]; then
 fi
 
 # prefetch buildstep. so the first deployment doesn't have to fetch it.
-download_and_verify_image experimentalplatform/buildstep:${CHANNEL}
+download_and_verify_image experimentalplatform/buildstep:latest
 # required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
 download_and_verify_image ibuildthecloud/systemd-docker
 # Complex regexp to find all images names in all service files
