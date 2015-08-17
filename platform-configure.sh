@@ -46,11 +46,13 @@ function download_and_verify_image() {
     # This is the most stupid way to check if all layer were downloaded correctly.
     # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
     # even with output piped to /dev/null.
+    echo -e "\t\tINSTALLER: Validating layer ${layer}"
     if [[ ! -e /var/lib/docker/overlay/$layer || ! -e /var/lib/docker/graph/$layer ]]; then
       echo "INSTALLER: Layer '$layer' of '$image' missing. Switching to previous version (if there was one)."
       $DOCKER tag -f "$image-previous" $image 2>/dev/null
       exit 1
     fi
+    echo -e "\t\tINSTALLER: Successfully validated layer ${layer}"
   done
 
 
