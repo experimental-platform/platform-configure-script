@@ -6,6 +6,7 @@ deployment:
   deployment:
   # rebuild platform-configure so it always uses the latest platform-configure.sh.
     branch: master
+    commands:
       - >
         curl
         --header "Content-Type: application/json"
