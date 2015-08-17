@@ -148,7 +148,13 @@ download_and_verify_image ibuildthecloud/systemd-docker
 # Complex regexp to find all images names in all service files
 IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
 for IMAGE in $IMAGES; do
-  download_and_verify_image $IMAGE
+  # Doesn't work on buildstep as it is build w/ tag "latest" only.
+  if [[ ! ${IMAGE} =~ "experimentalplatform/buildstep" ]]; then
+    echo "FETCHING ${IMAGE}"
+    download_and_verify_image $IMAGE
+  else
+    echo "NOT FETCHING ${IMAGE} ;)"
+  fi
 done
 
 if [ "$RELOAD" = true ]; then
