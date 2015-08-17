@@ -37,9 +37,11 @@ function print_usage() {
 
 function download_and_verify_image() {
   local image=$1
+  echo -e "\tTagging image..."
   $DOCKER tag -f $image "$image-previous" 2>/dev/null || true # do not fail, this is just for backup reason
-
+  echo -e "\tPulling Image"
   $DOCKER pull $image
+  echo -e "\tValidating all layers"
   for layer in $(docker history --no-trunc $image | tail -n +2 | awk '{ print $1 }'); do
     # This is the most stupid way to check if all layer were downloaded correctly.
     # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
@@ -50,6 +52,7 @@ function download_and_verify_image() {
       exit 1
     fi
   done
+
 
   local image_id=$(docker images | awk "(\$1 \":\" \$2) == \"$image\" {print \$3}")
   image=${image#$REGISTRY/} # remove Registry prefix
@@ -156,6 +159,7 @@ for IMAGE in $IMAGES; do
     echo "NOT FETCHING ${IMAGE} ;)"
   fi
 done
+echo "DONE FETCHING ALL IMAGES."
 
 if [ "$RELOAD" = true ]; then
   echo "Reloading systemctl after update."
