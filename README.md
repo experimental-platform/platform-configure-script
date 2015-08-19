@@ -46,7 +46,7 @@ Vagrant is a VM manager widely used to create ad-hoc environments for testing. I
 
 Platform installation is based on a running CoreOS instance. To simplify local testing we include a primitive `Vagrantfile` that should get you running in a few minutes.
 
-    $ git clone https://github.com/orgs/experimental-platform/platform-configure-script.git
+    $ git clone https://github.com/experimental-platform/platform-configure-script.git
     $ cd platform-configure-script
     $ vagrant up
 
