@@ -58,109 +58,114 @@ function download_and_verify_image() {
   echo $image_id > $IMAGE_STATE_DIR/$image
 }
 
-while [[ $# > 0 ]]; do
-  key="$1"
-  case $key in
-    -r|--reboot)
-      REBOOT=true
+function install_platform() {
+  while [[ $# > 0 ]]; do
+    key="$1"
+    case $key in
+      -r|--reboot)
+        REBOOT=true
+        ;;
+      -l|--reload)
+        RELOAD=true
+        ;;
+      -d|--debug)
+        DEBUG=true
+        ;;
+      -c|--channel)
+        CHANNEL="$2"
+        shift
+        ;;
+      -h|--help)
+        print_usage
+        exit 0
+        ;;
+      *)
+        # unknown option
       ;;
-    -l|--reload)
-      RELOAD=true
-      ;;
-    -d|--debug)
-      DEBUG=true
-      ;;
-    -c|--channel)
-      CHANNEL="$2"
-      shift
-      ;;
-    -h|--help)
-      print_usage
-      exit 0
-      ;;
-    *)
-      # unknown option
-    ;;
-  esac
-  shift # past argument or value
-done
+    esac
+    shift # past argument or value
+  done
 
-if [ "$DEBUG" = true ]; then
-  set -x
-fi
+  if [ "$DEBUG" = true ]; then
+    set -x
+  fi
 
-if [ "$(id -u)" != "0" ]; then
-  echo "Can not run without root permissions."
-  exit 2
-fi
+  if [ "$(id -u)" != "0" ]; then
+    echo "Can not run without root permissions."
+    exit 2
+  fi
 
-mkdir -p $IMAGE_STATE_DIR
+  mkdir -p $IMAGE_STATE_DIR
 
-if [[ -z "${CHANNEL}" ]]; then
-  if [ -e ${CHANNEL_FILE} ]; then
-    CHANNEL=$(cat ${CHANNEL_FILE})
-    echo "Using channel '${CHANNEL}' from ${CHANNEL_FILE}."
+  if [[ -z "${CHANNEL}" ]]; then
+    if [ -e ${CHANNEL_FILE} ]; then
+      CHANNEL=$(cat ${CHANNEL_FILE})
+      echo "Using channel '${CHANNEL}' from ${CHANNEL_FILE}."
+    else
+      CHANNEL=stable
+      echo "No channel given. Using '${CHANNEL}' (default channel)."
+    fi
   else
-    CHANNEL=stable
-    echo "No channel given. Using '${CHANNEL}' (default channel)."
+    echo "Using '${CHANNEL}' from the command line."
   fi
-else
-  echo "Using '${CHANNEL}' from the command line."
-fi
 
-download_and_verify_image $REGISTRY/configure:${CHANNEL}
+  download_and_verify_image $REGISTRY/configure:${CHANNEL}
 
-# clean up running update task!
-$DOCKER kill $CONTAINER_NAME 2>/dev/null || true
-$DOCKER rm $CONTAINER_NAME 2>/dev/null || true
+  # clean up running update task!
+  $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
+  $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
 
-$DOCKER run --rm --name=$CONTAINER_NAME \
-            --volume=/etc/:/data/ \
-            --volume=/opt/bin/:/host-bin/ \
-            $REGISTRY/configure:$CHANNEL
+  $DOCKER run --rm --name=$CONTAINER_NAME \
+              --volume=/etc/:/data/ \
+              --volume=/opt/bin/:/host-bin/ \
+              $REGISTRY/configure:$CHANNEL
 
-# Make sure we're actually waiting for the network if it's required.
-systemctl enable systemd-networkd-wait-online.service
+  # Make sure we're actually waiting for the network if it's required.
+  systemctl enable systemd-networkd-wait-online.service
 
-find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
-# .path files need to be started!
-find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
+  find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
+  # .path files need to be started!
+  find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
 
-mkdir -p $(dirname $CHANNEL_FILE)
-echo $CHANNEL > $CHANNEL_FILE
+  mkdir -p $(dirname $CHANNEL_FILE)
+  echo $CHANNEL > $CHANNEL_FILE
 
-#
-# Pre-Fetch all Images
-#
+  #
+  # Pre-Fetch all Images
+  #
 
-# When using a feature branch most images come from the development channel:
-available_channels="development alpha beta stable"
-if [[ ! ${available_channels} =~ ${CHANNEL} ]]; then
-  echo "We're on feature channel '${CHANNEL}'"
-  CHANNEL=development
-fi
-
-# prefetch buildstep. so the first deployment doesn't have to fetch it.
-download_and_verify_image experimentalplatform/buildstep:latest
-# required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
-download_and_verify_image ibuildthecloud/systemd-docker
-# Complex regexp to find all images names in all service files
-IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
-for IMAGE in $IMAGES; do
-  # Doesn't work on buildstep as it is build w/ tag "latest" only.
-  if [[ ! ${IMAGE} =~ "experimentalplatform/buildstep" ]]; then
-    download_and_verify_image $IMAGE
+  # When using a feature branch most images come from the development channel:
+  available_channels="development alpha beta stable"
+  if [[ ! ${available_channels} =~ ${CHANNEL} ]]; then
+    echo "We're on feature channel '${CHANNEL}'"
+    CHANNEL=development
   fi
-done
 
-if [ "$RELOAD" = true ]; then
-  echo "Reloading systemctl after update."
-  systemctl restart init-protonet.service
-  exit 0
-fi
+  # prefetch buildstep. so the first deployment doesn't have to fetch it.
+  download_and_verify_image experimentalplatform/buildstep:latest
+  # required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
+  download_and_verify_image ibuildthecloud/systemd-docker
+  # Complex regexp to find all images names in all service files
+  IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
+  for IMAGE in $IMAGES; do
+    # Doesn't work on buildstep as it is build w/ tag "latest" only.
+    if [[ ! ${IMAGE} =~ "experimentalplatform/buildstep" ]]; then
+      download_and_verify_image $IMAGE
+    fi
+  done
 
-if [ "$REBOOT" = true ]; then
-  echo "Rebooting after update."
-  shutdown --reboot 1 "Rebooting system for experimental-platform update."
-  exit 0
-fi
+  if [ "$RELOAD" = true ]; then
+    echo "Reloading systemctl after update."
+    systemctl restart init-protonet.service
+    exit 0
+  fi
+
+  if [ "$REBOOT" = true ]; then
+    echo "Rebooting after update."
+    shutdown --reboot 1 "Rebooting system for experimental-platform update."
+    exit 0
+  fi
+}
+
+# wrapped in a function so that a partially downloaded script won't execute
+install_platform
