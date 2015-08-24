@@ -23,7 +23,7 @@ IMAGE_STATE_DIR=/etc/protonet/system/images
 
 REBOOT=false
 RELOAD=false
-DEBUG=true
+DEBUG=false
 
 function print_usage() {
   echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
@@ -59,32 +59,6 @@ function download_and_verify_image() {
 }
 
 function install_platform() {
-  while [[ $# > 0 ]]; do
-    key="$1"
-    case $key in
-      -r|--reboot)
-        REBOOT=true
-        ;;
-      -l|--reload)
-        RELOAD=true
-        ;;
-      -d|--debug)
-        DEBUG=true
-        ;;
-      -c|--channel)
-        CHANNEL="$2"
-        shift
-        ;;
-      -h|--help)
-        print_usage
-        exit 0
-        ;;
-      *)
-        # unknown option
-      ;;
-    esac
-    shift # past argument or value
-  done
 
   if [ "$DEBUG" = true ]; then
     set -x
@@ -102,7 +76,7 @@ function install_platform() {
       CHANNEL=$(cat ${CHANNEL_FILE})
       echo "Using channel '${CHANNEL}' from ${CHANNEL_FILE}."
     else
-      CHANNEL=stable
+      CHANNEL="alpha"
       echo "No channel given. Using '${CHANNEL}' (default channel)."
     fi
   else
@@ -167,5 +141,31 @@ function install_platform() {
   fi
 }
 
-# wrapped in a function so that a partially downloaded script won't execute
+while [[ $# > 0 ]]; do
+  key="$1"
+  case $key in
+    -r|--reboot)
+      REBOOT=true
+      ;;
+    -l|--reload)
+      RELOAD=true
+      ;;
+    -d|--debug)
+      DEBUG=true
+      ;;
+    -c|--channel)
+      CHANNEL="$2"
+      shift
+      ;;
+    -h|--help)
+      print_usage
+      exit 0
+      ;;
+    *)
+      # unknown option
+    ;;
+  esac
+  shift # past argument or value
+done
+
 install_platform
