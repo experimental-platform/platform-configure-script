@@ -3,7 +3,6 @@
 ## 2015-08-26
 
 * **App Deployment:** Support for adding apt packages. Simply add a ``apt-packages`` file to your app that contains the required packages. ([Additional info](https://github.com/experimental-platform/platform-configure-script/wiki/Create-an-app-that-requires-apt-packages))
-* **App List:** Using the open-link now prefers the local ``box-name.local`` over the remote ``box-name.protonet.info`` url
 * **App List:** Dockerfile apps now always show ``none`` as app type (previously they showed a random/wrong app type, fixes [#4](https://github.com/experimental-platform/platform-configure-script/issues/4))
 * **System:** Ensure that avahi (bonjour) and samba always come up after boot (fixes [#27](https://github.com/experimental-platform/platform-configure-script/issues/27))
 * **System:** Fix compatibility between Dokku and new CoreOS update
