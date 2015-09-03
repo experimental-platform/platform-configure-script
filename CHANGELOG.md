@@ -1,5 +1,15 @@
 # Changelog
 
+## 2015-09-03
+
+* **USB:** ``/dev/bus/usb`` is now mounted into each app, also ``lsusb`` is available and shows connected devices, serial access isn't working yet because of wrong permissions (see [#20](https://github.com/experimental-platform/platform-configure-script/issues/20))
+* **Documentation:** The web frontend now displays a direct link to the Documentation
+* **App List:** Correctly detect Dockerfile apps (see [#4](https://github.com/experimental-platform/platform-configure-script/issues/4))
+* **App List:** Prefer local (bonjour) url over remote url when opening apps
+* **App List:** Changing the name/url of a machine now ensures that all apps get this info and offer the correct app url (fixes [#12](https://github.com/experimental-platform/platform-configure-script/issues/12))
+* **Apps:** Apps now receive a correct ``X-Forwarded-Proto`` header (see [#22](https://github.com/experimental-platform/platform-configure-script/issues/22))
+* **System:** Fix an issue where docker containers sometimes weren't successfully started after boot
+
 ## 2015-08-26
 
 * **App Deployment:** Support for adding apt packages. Simply add a ``apt-packages`` file to your app that contains the required packages. ([Additional info](https://github.com/experimental-platform/platform-configure-script/wiki/Create-an-app-that-requires-apt-packages))
