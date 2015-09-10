@@ -1,5 +1,11 @@
 # Changelog
 
+## 2015-09-10
+
+* **System**: Fix an issue where the updater in certain situations wrongly announced the availability of an update
+* **App List:** Open apps in a new tab
+
+
 ## 2015-09-03
 
 * **USB:** ``/dev/bus/usb`` is now mounted into each app, also ``lsusb`` is available and shows connected devices, serial access isn't working yet because of wrong permissions (see [#20](https://github.com/experimental-platform/platform-configure-script/issues/20))
