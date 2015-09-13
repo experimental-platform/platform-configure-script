@@ -49,8 +49,8 @@ function download_and_verify_image() {
     fi
   done
 
-
-  local image_id=$(docker images | awk "(\$1 \":\" \$2) == \"$image\" {print \$3}")
+  # TODO: Might wanna add --type=image for good measure once Docker 1.8 hits the CoreOS stable.
+  local image_id=$(docker inspect --format '{{.Id}}' $image)
   image=${image#$REGISTRY/} # remove Registry prefix
 
   mkdir -p $(dirname $IMAGE_STATE_DIR/$image)
