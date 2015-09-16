@@ -117,8 +117,6 @@ function install_platform() {
 
   # prefetch buildstep. so the first deployment doesn't have to fetch it.
   download_and_verify_image experimentalplatform/buildstep:latest
-  # required in init-protonet.service. BOOT FAILS IF THIS ISN'T PRESENT!
-  download_and_verify_image ibuildthecloud/systemd-docker
   # Complex regexp to find all images names in all service files
   IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
   for IMAGE in $IMAGES; do
