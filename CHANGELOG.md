@@ -1,5 +1,11 @@
 # Changelog
 
+## 2015-09-17
+
+* **System**: Fix a few issues that could lead to `permission denied` messages
+* **Updates**: Fix an issue where container deletion would fail
+* **App Deployment**: Deployment error `[8] System error: no such file or directory` should be fixed
+
 ## 2015-09-10
 
 * **System**: Fix an issue where the updater in certain situations wrongly announced the availability of an update
