@@ -23,7 +23,65 @@ IMAGE_STATE_DIR=/etc/protonet/system/images
 
 PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
 PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
+PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
 PLATFORM_INSTALL_DEBUG=${PLATFORM_INSTALL_DEBUG:=false}
+
+PROTONET_PUBKEY_DIGEST="6791eb2e90b9749c8239ea41118c4907ac41ce9a"
+
+function is_update_key_protonet() {
+  current_digest=$(/usr/bin/sha1sum < /usr/share/update_engine/update-payload-key.pub.pem | cut -f1 -d ' ')
+  if [[ "$current_digest" == "$PROTONET_PUBKEY_DIGEST" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function update_os_image() {
+  # just in case someone left a key mount
+  umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
+
+  if ! is_update_key_protonet; then
+    # download and mount Protonet key
+    curl https://raw.githubusercontent.com/experimental-platform/coreos-overlay/1cbf54ddcc8d0f03a91ae0a894f080d595b2264f/coreos-base/coreos-au-key/files/developer-v1.pub.pem > /tmp/protonet-image.pub.pem
+    if [[ "$?" -ne 0 ]]; then
+      echo "Protonet key download failed"
+      exit 1
+    fi
+    mount --bind /tmp/protonet-image.pub.pem /usr/share/update_engine/update-payload-key.pub.pem
+  fi
+
+  # reset backoff timestamp
+  rm -f /var/lib/update_engine/prefs/backoff-expiry-time
+
+  # configure update source
+  echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
+GROUP=protonet
+SERVER=http://coreos-update.protorz.net:8080/update
+REBOOT_STRATEGY=off
+EOM
+
+  # apply changes to update-engine
+  systemctl restart update-engine.service
+
+  # run update and save its exit code
+  echo "Forcing system image update"
+  update_engine_client -update &>/dev/null | true
+  update_status=${PIPESTATUS[0]}
+  echo "Done."
+
+  # in case we mounted a downloaded key
+  umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null
+  rm -f /tmp/protonet-image.pub.pem
+
+  if [[ "$update_status" -eq 0 ]]; then
+    echo "System image update successfull."
+    return 0
+  else
+    echo "System image update failed."
+    return 1
+  fi
+}
 
 function print_usage() {
   echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
@@ -135,6 +193,12 @@ function install_platform() {
     exit 0
   fi
 
+  if [ "$PLATFORM_INSTALL_OSUPDATE" = true ]; then
+    echo "Updating CoreOS system image."
+    update_os_image
+    exit $?
+  fi
+
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
     echo "Rebooting after update."
     shutdown --reboot 1 "Rebooting system for experimental-platform update."
@@ -153,6 +217,9 @@ while [[ $# > 0 ]]; do
       ;;
     -d|--debug)
       PLATFORM_INSTALL_DEBUG=true
+      ;;
+    -o|--osupdate)
+      PLATFORM_INSTALL_OSUPDATE=true
       ;;
     -c|--channel)
       CHANNEL="$2"
