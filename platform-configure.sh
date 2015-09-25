@@ -37,7 +37,15 @@ function is_update_key_protonet() {
   fi
 }
 
+function cancel_pending_os_updates() {
+	update_engine_client -reset_status
+	(D=$(rootdev -d) P=$(rootdev -s); cgpt p -i$(($(echo ${P#$D} | sed 's/^[^0-9]*//')-1)) $D;)
+}
+
 function update_os_image() {
+	# in case there was an automatic update already running
+	cancel_pending_os_updates
+
   # just in case someone left a key mount
   umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
 
