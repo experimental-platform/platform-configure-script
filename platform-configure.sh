@@ -37,19 +37,14 @@ function is_update_key_protonet() {
   fi
 }
 
-function cancel_pending_os_updates() {
-	update_engine_client -reset_status
-	(D=$(rootdev -d) P=$(rootdev -s); cgpt p -i$(($(echo ${P#$D} | sed 's/^[^0-9]*//')-1)) $D;)
-}
-
-function update_os_image() {
+function enable_protonet_updates() {
 	# in case there was an automatic update already running
-	cancel_pending_os_updates
+	update_engine_client -reset_status
 
-  # just in case someone left a key mount
+	# just in case someone left a key mount
   umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
 
-  if ! is_update_key_protonet; then
+	if ! is_update_key_protonet; then
     # download and mount Protonet key
     curl https://raw.githubusercontent.com/experimental-platform/coreos-overlay/1cbf54ddcc8d0f03a91ae0a894f080d595b2264f/coreos-base/coreos-au-key/files/developer-v1.pub.pem > /tmp/protonet-image.pub.pem
     if [[ "$?" -ne 0 ]]; then
@@ -59,19 +54,21 @@ function update_os_image() {
     mount --bind /tmp/protonet-image.pub.pem /usr/share/update_engine/update-payload-key.pub.pem
   fi
 
-  # reset backoff timestamp
+	# reset backoff timestamp
   rm -f /var/lib/update_engine/prefs/backoff-expiry-time
 
-  # configure update source
+	# configure update source
   echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
 GROUP=protonet
 SERVER=http://coreos-update.protorz.net:8080/update
 REBOOT_STRATEGY=off
 EOM
 
-  # apply changes to update-engine
-  systemctl restart update-engine.service
+	# apply changes to update-engine
+	systemctl restart update-engine.service
+}
 
+function update_os_image() {
   # run update and save its exit code
   echo "Forcing system image update"
   update_engine_client -update &>/dev/null | true
@@ -244,4 +241,5 @@ while [[ $# > 0 ]]; do
   shift # past argument or value
 done
 
+enable_protonet_updates
 install_platform
