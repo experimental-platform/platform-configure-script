@@ -101,9 +101,12 @@ function install_platform() {
   # .path files need to be started!
   find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
 
-  mkdir -p $(dirname $CHANNEL_FILE)
-  echo $CHANNEL > $CHANNEL_FILE
-
+  if [[ ! -f ${CHANNEL_FILE} ]] || [[ ! $(cat ${CHANNEL_FILE}) = "${CHANNEL}" ]]; then
+    systemctl stop trigger-update-protonet.path
+    mkdir -p $(dirname ${CHANNEL_FILE})
+    echo ${CHANNEL} > ${CHANNEL_FILE}
+    systemctl start trigger-update-protonet.path
+  fi
   #
   # Pre-Fetch all Images
   #
