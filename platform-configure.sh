@@ -127,11 +127,6 @@ function install_platform() {
     set -x
   fi
 
-  if [ "$(id -u)" != "0" ]; then
-    echo "Can not run without root permissions."
-    exit 2
-  fi
-
   mkdir -p $IMAGE_STATE_DIR
 
   if [[ -z "${CHANNEL}" ]]; then
@@ -240,6 +235,11 @@ while [[ $# > 0 ]]; do
   esac
   shift # past argument or value
 done
+
+if [ "$(id -u)" != "0" ]; then
+	echo "Can not run without root permissions."
+	exit 2
+fi
 
 enable_protonet_updates
 install_platform
