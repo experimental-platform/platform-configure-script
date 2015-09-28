@@ -1,5 +1,11 @@
 # Changelog
 
+## 2015-09-24
+
+* **Updates:** A live status is now shown during update ([#40](https://github.com/experimental-platform/platform-frontend/pull/40))
+* **Apps:** Apps are now started in a priviliged container in order to access hardware apis
+* **Logging:** Logging is now at warn level
+
 ## 2015-09-17
 
 * **System**: Fix a few issues that could lead to `permission denied` messages
