@@ -21,9 +21,9 @@ CONTAINER_NAME="configure"
 CHANNEL_FILE=/etc/protonet/system/channel
 IMAGE_STATE_DIR=/etc/protonet/system/images
 
-REBOOT=false
-RELOAD=false
-DEBUG=false
+PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
+PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
+PLATFORM_INSTALL_DEBUG=${PLATFORM_INSTALL_DEBUG:=false}
 
 function print_usage() {
   echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
@@ -60,7 +60,7 @@ function download_and_verify_image() {
 
 function install_platform() {
 
-  if [ "$DEBUG" = true ]; then
+  if [ "$PLATFORM_INSTALL_DEBUG" = true ]; then
     set -x
   fi
 
@@ -129,13 +129,13 @@ function install_platform() {
     fi
   done
 
-  if [ "$RELOAD" = true ]; then
+  if [ "$PLATFORM_INSTALL_RELOAD" = true ]; then
     echo "Reloading systemctl after update."
     systemctl restart init-protonet.service
     exit 0
   fi
 
-  if [ "$REBOOT" = true ]; then
+  if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
     echo "Rebooting after update."
     shutdown --reboot 1 "Rebooting system for experimental-platform update."
     exit 0
@@ -146,13 +146,13 @@ while [[ $# > 0 ]]; do
   key="$1"
   case $key in
     -r|--reboot)
-      REBOOT=true
+      PLATFORM_INSTALL_REBOOT=true
       ;;
     -l|--reload)
-      RELOAD=true
+      PLATFORM_INSTALL_RELOAD=true
       ;;
     -d|--debug)
-      DEBUG=true
+      PLATFORM_INSTALL_DEBUG=true
       ;;
     -c|--channel)
       CHANNEL="$2"
