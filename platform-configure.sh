@@ -91,6 +91,7 @@ function update_os_image() {
 function print_usage() {
   echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
   echo "Flags:"
+  echo -e "\t-o|--osupdate\tUpdate CoreOS image"
   echo -e "\t-r|--reboot\tReboot after update finished."
   echo -e "\t-l|--reload\tTry to soft reload all services."
   echo -e "\t-c|--channel\tUse specified channel (default 'stable')."
