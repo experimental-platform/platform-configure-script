@@ -1,5 +1,10 @@
 # Changelog
 
+## 2015-10-01
+
+* **Apps:** They now have full access to ``/dev`` of the host system
+* **App List:** Now keeps refreshing even if the platform were down for a short moment
+
 ## 2015-09-24
 
 * **Updates:** A live status is now shown during update ([#40](https://github.com/experimental-platform/platform-frontend/pull/40))
