@@ -196,8 +196,7 @@ function install_platform() {
 
   if [ "$PLATFORM_INSTALL_OSUPDATE" = true ]; then
     echo "Updating CoreOS system image."
-    update_os_image
-    exit $?
+    update_os_image || true
   fi
 
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
