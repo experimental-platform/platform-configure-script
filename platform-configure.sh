@@ -23,11 +23,80 @@ IMAGE_STATE_DIR=/etc/protonet/system/images
 
 PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
 PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
+PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
 PLATFORM_INSTALL_DEBUG=${PLATFORM_INSTALL_DEBUG:=false}
+
+PROTONET_PUBKEY="-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5CfJQVP2yJlcMu/3/RxD
+KnOvcxD40VWsDiUn/FDXlcgQWpg/xH2a7LD9bpD4c3+jWtUst+I7ZhL11YiyfQDr
+Afw9m11RiHtl+fvJfLg8PwuQ25jc5Cf/hLn+NpnFxL4vlifNWljIoIh17j3KE0hj
+jd/V7435gkIm0eIvTiebn4cposzh74XrlOnsGyTTyPJ4IMcnS3zYdOIAeTKoSMea
+rUIsXC8jYMQtua8q96eqM3bPsvFLBWRRQoTfRtVSfydNbZp+i1SixVKo4oDz9UmF
+fNLAJRPgRI+pXV0O6MdmPtKu5dQNkVGAYm7RWbxZctGxsOArXE43OjqE6kGLVabw
+7QIDAQAB
+-----END PUBLIC KEY-----"
+
+function is_update_key_protonet() {
+	key_path="/usr/share/update_engine/update-payload-key.pub.pem"
+  current_digest=$(cat "$key_path" | /usr/bin/sha1sum | cut -f1 -d ' ')
+	protonet_digest=$(echo "$PROTONET_PUBKEY" | /usr/bin/sha1sum | cut -f1 -d ' ')
+  if [[ "$current_digest" == "$protonet_digest" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function enable_protonet_updates() {
+	# in case there was an automatic update already running
+	update_engine_client -reset_status
+
+	# just in case someone left a key mount
+  umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
+
+	if ! is_update_key_protonet; then
+    echo "$PROTONET_PUBKEY" > /tmp/protonet-image.pub.pem
+    mount --bind /tmp/protonet-image.pub.pem /usr/share/update_engine/update-payload-key.pub.pem
+  fi
+
+	# reset backoff timestamp
+  rm -f /var/lib/update_engine/prefs/backoff-expiry-time
+
+	# configure update source
+  echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
+GROUP=protonet
+SERVER=http://coreos-update.protorz.net:8080/update
+REBOOT_STRATEGY=off
+EOM
+
+	# apply changes to update-engine
+	systemctl restart update-engine.service
+}
+
+function update_os_image() {
+  # run update and save its exit code
+  echo "Forcing system image update"
+  update_engine_client -update &>/dev/null | true
+  update_status=${PIPESTATUS[0]}
+  echo "Done."
+
+  # in case we mounted a downloaded key
+  umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null
+  rm -f /tmp/protonet-image.pub.pem
+
+  if [[ "$update_status" -eq 0 ]]; then
+    echo "System image update successfull."
+    return 0
+  else
+    echo "System image update failed."
+    return 1
+  fi
+}
 
 function print_usage() {
   echo "usage: $0 [-r|--reboot] [-l|--reload] [-d|--debug] [-h|--help] [-c|--channel channel]"
   echo "Flags:"
+  echo -e "\t-o|--osupdate\tUpdate CoreOS image"
   echo -e "\t-r|--reboot\tReboot after update finished."
   echo -e "\t-l|--reload\tTry to soft reload all services."
   echo -e "\t-c|--channel\tUse specified channel (default 'stable')."
@@ -62,11 +131,6 @@ function install_platform() {
 
   if [ "$PLATFORM_INSTALL_DEBUG" = true ]; then
     set -x
-  fi
-
-  if [ "$(id -u)" != "0" ]; then
-    echo "Can not run without root permissions."
-    exit 2
   fi
 
   mkdir -p $IMAGE_STATE_DIR
@@ -135,6 +199,11 @@ function install_platform() {
     exit 0
   fi
 
+  if [ "$PLATFORM_INSTALL_OSUPDATE" = true ]; then
+    echo "Updating CoreOS system image."
+    update_os_image || true
+  fi
+
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
     echo "Rebooting after update."
     shutdown --reboot 1 "Rebooting system for experimental-platform update."
@@ -154,6 +223,9 @@ while [[ $# > 0 ]]; do
     -d|--debug)
       PLATFORM_INSTALL_DEBUG=true
       ;;
+    -o|--osupdate)
+      PLATFORM_INSTALL_OSUPDATE=true
+      ;;
     -c|--channel)
       CHANNEL="$2"
       shift
@@ -169,4 +241,10 @@ while [[ $# > 0 ]]; do
   shift # past argument or value
 done
 
+if [ "$(id -u)" != "0" ]; then
+	echo "Can not run without root permissions."
+	exit 2
+fi
+
+enable_protonet_updates
 install_platform
