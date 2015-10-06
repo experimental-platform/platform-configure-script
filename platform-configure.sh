@@ -26,11 +26,21 @@ PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
 PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
 PLATFORM_INSTALL_DEBUG=${PLATFORM_INSTALL_DEBUG:=false}
 
-PROTONET_PUBKEY_DIGEST="6791eb2e90b9749c8239ea41118c4907ac41ce9a"
+PROTONET_PUBKEY="-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5CfJQVP2yJlcMu/3/RxD
+KnOvcxD40VWsDiUn/FDXlcgQWpg/xH2a7LD9bpD4c3+jWtUst+I7ZhL11YiyfQDr
+Afw9m11RiHtl+fvJfLg8PwuQ25jc5Cf/hLn+NpnFxL4vlifNWljIoIh17j3KE0hj
+jd/V7435gkIm0eIvTiebn4cposzh74XrlOnsGyTTyPJ4IMcnS3zYdOIAeTKoSMea
+rUIsXC8jYMQtua8q96eqM3bPsvFLBWRRQoTfRtVSfydNbZp+i1SixVKo4oDz9UmF
+fNLAJRPgRI+pXV0O6MdmPtKu5dQNkVGAYm7RWbxZctGxsOArXE43OjqE6kGLVabw
+7QIDAQAB
+-----END PUBLIC KEY-----"
 
 function is_update_key_protonet() {
-  current_digest=$(/usr/bin/sha1sum < /usr/share/update_engine/update-payload-key.pub.pem | cut -f1 -d ' ')
-  if [[ "$current_digest" == "$PROTONET_PUBKEY_DIGEST" ]]; then
+	key_path="/usr/share/update_engine/update-payload-key.pub.pem"
+  current_digest=$(cat "$key_path" | /usr/bin/sha1sum | cut -f1 -d ' ')
+	protonet_digest=$(echo "$PROTONET_PUBKEY" | /usr/bin/sha1sum | cut -f1 -d ' ')
+  if [[ "$current_digest" == "$protonet_digest" ]]; then
     return 0
   else
     return 1
@@ -45,12 +55,7 @@ function enable_protonet_updates() {
   umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
 
 	if ! is_update_key_protonet; then
-    # download and mount Protonet key
-    curl https://raw.githubusercontent.com/experimental-platform/coreos-overlay/1cbf54ddcc8d0f03a91ae0a894f080d595b2264f/coreos-base/coreos-au-key/files/developer-v1.pub.pem > /tmp/protonet-image.pub.pem
-    if [[ "$?" -ne 0 ]]; then
-      echo "Protonet key download failed"
-      exit 1
-    fi
+    echo "$PROTONET_PUBKEY" > /tmp/protonet-image.pub.pem
     mount --bind /tmp/protonet-image.pub.pem /usr/share/update_engine/update-payload-key.pub.pem
   fi
 
