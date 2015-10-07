@@ -164,6 +164,8 @@ function install_platform() {
   find /etc/systemd/system -maxdepth 1 ! -name "*.sh" -type f -exec systemctl enable {} +
   # .path files need to be started!
   find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
+  # timers need to be enabled
+  find /etc/systemd/system -maxdepth 1 -name "*.timer" -type f | xargs basename -a | xargs systemctl enable
 
   if [[ ! -f ${CHANNEL_FILE} ]] || [[ ! $(cat ${CHANNEL_FILE}) = "${CHANNEL}" ]]; then
     systemctl stop trigger-update-protonet.path
