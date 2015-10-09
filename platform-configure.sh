@@ -65,7 +65,7 @@ function enable_protonet_updates() {
 	# configure update source
   echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
 GROUP=protonet
-SERVER=http://coreos-update.protorz.net:8080/update
+SERVER=https://coreos-update.protorz.net/update
 REBOOT_STRATEGY=off
 EOM
 
