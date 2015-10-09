@@ -185,7 +185,7 @@ function install_platform() {
   fi
 
   # prefetch buildstep. so the first deployment doesn't have to fetch it.
-  download_and_verify_image experimentalplatform/buildstep:latest
+  download_and_verify_image experimentalplatform/buildstep:herokuish
   # Complex regexp to find all images names in all service files
   IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
   for IMAGE in $IMAGES; do
