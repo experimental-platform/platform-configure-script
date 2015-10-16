@@ -9,7 +9,7 @@ As we're in the initial stages of the development we currently deliver a Vagrant
 ### Requirements
 
 * x86 based hardware
-* Linux
+* CoreOS Linux, preferably the beta channel
 * at least 1 GByte of free RAM
 * roughly 5 GByte of free HD space
 
