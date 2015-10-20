@@ -1,0 +1,23 @@
+branches:
+  only:
+    - master
+script:
+  - >
+    BODY="{ \"request\": {
+      \"message\": \"Triggered by '$TRAVIS_REPO_SLUG'\",
+      \"config\": {
+        \"env\": {
+          \"SERVICE_TAG\": \"development\",
+          \"DEVELOPMENT\": \"development\"
+        }}}}"
+    URL="https://api.travis-ci.org/repo/experimental-platform%2Fplatform-configure/requests"
+    echo "URL: $URL"
+    echo "BODY: $BODY"
+    curl -f -s -X POST \
+      -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
+      -H "Travis-API-Version: 3" \
+      -H "Authorization: token $TRAVIS_TOKEN" \
+      -d "$BODY" \
+      $URL
+
