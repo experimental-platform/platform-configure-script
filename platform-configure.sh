@@ -19,6 +19,7 @@ DOCKER=$(which docker)
 REGISTRY="experimentalplatform"
 CONTAINER_NAME="configure"
 CHANNEL_FILE=/etc/protonet/system/channel
+UPDATE_ENGINE_CONFIG=/etc/coreos/update.conf
 IMAGE_STATE_DIR=/etc/protonet/system/images
 
 PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
@@ -48,6 +49,18 @@ function is_update_key_protonet() {
 }
 
 function enable_protonet_updates() {
+  if [[ -z "${SYS_GROUP}" ]]; then
+    if [ -e ${UPDATE_ENGINE_CONFIG} ]; then
+      SYS_GROUP=$(cat ${UPDATE_ENGINE_CONFIG} | grep '^GROUP=' | cut -f2 -d '=')
+      echo "Using OS group '${SYS_GROUP}' from ${UPDATE_ENGINE_CONFIG}."
+    else
+      SYS_GROUP="protonet"
+      echo "No OS group given. Using '${SYS_GROUP}' (default group)."
+    fi
+  else
+    echo "Using OS group '${SYS_GROUP}' from the command line."
+  fi
+
 	# in case there was an automatic update already running
 	update_engine_client -reset_status
 
@@ -64,7 +77,7 @@ function enable_protonet_updates() {
 
 	# configure update source
   echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
-GROUP=protonet
+GROUP=$SYS_GROUP
 SERVER=https://coreos-update.protorz.net/update
 REBOOT_STRATEGY=off
 EOM
@@ -100,6 +113,7 @@ function print_usage() {
   echo -e "\t-r|--reboot\tReboot after update finished."
   echo -e "\t-l|--reload\tTry to soft reload all services."
   echo -e "\t-c|--channel\tUse specified channel (default 'stable')."
+  echo -e "\t-g|--group\tUse specified CoreOS image group (default 'protonet')."
   echo -e "\t-d|--debug\tEnable debug output."
   echo -e "\t-h|--help\tShow this help text."
 }
@@ -230,6 +244,10 @@ while [[ $# > 0 ]]; do
       ;;
     -c|--channel)
       CHANNEL="$2"
+      shift
+      ;;
+    -g|--group)
+      SYS_GROUP="$2"
       shift
       ;;
     -h|--help)
