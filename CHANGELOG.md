@@ -1,5 +1,30 @@
 # Changelog
 
+## 2015-11-12
+
+* **System:** Added containerized PulseAudio service
+* **Apps:** PulseAudio socket is mounted at `/var/run/pulse/native`
+* **Update:** Fixed an issue with checking for updates
+
+## 2015-10-30
+
+* **Apps:** Updated to Dokku 0.4.3
+* **Apps:** Redeployment on reboot is now faster
+* **Update:** Fixed issue with a warning being shown on successful update
+
+## 2015-10-22
+
+* **System:** Various bugfixes
+* **Apps:** Only previously running apps will be rebuilt on reboot
+* **System:** Announce SSH and HTTP ports with Bonjour/Avahi
+* **System:** Our base Ubuntu image has been cut in size by over 100MB
+
+## 2015-10-16
+
+* **Updates:**: Enabled update of CoreOS image to Protonet's version
+* **Updates:**: Fixed issue with update script overwriting itself while still running
+* **Apps:** Updated to Dokku 0.4
+
 ## 2015-10-01
 
 * **Apps:** They now have full access to ``/dev`` of the host system
