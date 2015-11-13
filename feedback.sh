@@ -8,6 +8,7 @@ sudo journalctl -b "-1" > ${OUTPUT}/previous.log
 docker ps -a > ${OUTPUT}/docker-ps-a.txt
 docker images > ${OUTPUT}/docker-images.txt
 sudo systemctl > ${OUTPUT}/systemd-service-list.txt
+df -h > ${OUTPUT}/disk-free.txt
 sudo systemctl | awk '/fail/ {print $1}' | xargs -n 1 -i sudo systemctl status {} > ${OUTPUT}/systemd-service-status-failed.txt
 echo "DONE."
 # TODO: tar it up, send it and then clean up
