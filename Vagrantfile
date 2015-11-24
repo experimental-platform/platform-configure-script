@@ -9,14 +9,14 @@ CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "cloud-config.yml")
 
 Vagrant.configure("2") do |config|
   config.ssh.insert_key = false
-  config.vm.box = "coreos-beta"
-  config.vm.box_url = "http://beta.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json"
+  config.vm.box = "coreos-stable"
+  config.vm.box_url = "http://stable.release.core-os.net/amd64-usr/current/coreos_production_vagrant.json"
   config.vm.network "public_network"
   # config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: false
 
   ["vmware_fusion", "vmware_workstation"].each do |vmware|
     config.vm.provider vmware do |v, override|
-      override.vm.box_url = "http://beta.release.core-os.net/amd64-usr/current/coreos_production_vagrant_vmware_fusion.json"
+      override.vm.box_url = "http://stable.release.core-os.net/amd64-usr/current/coreos_production_vagrant_vmware_fusion.json"
     end
   end
 
