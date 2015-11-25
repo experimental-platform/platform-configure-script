@@ -34,12 +34,12 @@ Vagrant.configure("2") do |config|
 
   ["vmware_fusion", "vmware_workstation"].each do |vmware|
     config.vm.provider vmware do |v|
-      v.vmx['memsize'] = 1024
+      v.vmx['memsize'] = 2048
     end
   end
 
   config.vm.provider :virtualbox do |vb|
-    vb.memory = 1024
+    vb.memory = 2048
   end
 
   if File.exist?(CLOUD_CONFIG_PATH)
