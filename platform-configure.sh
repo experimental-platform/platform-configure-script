@@ -49,16 +49,16 @@ function is_update_key_protonet() {
 }
 
 function enable_protonet_updates() {
-  if [[ -z "${SYS_GROUP}" ]]; then
+  if [[ -z "${PLATFORM_SYS_GROUP}" ]]; then
     if [ -e ${UPDATE_ENGINE_CONFIG} ]; then
-      SYS_GROUP=$(cat ${UPDATE_ENGINE_CONFIG} | grep '^GROUP=' | cut -f2 -d '=')
-      echo "Using OS group '${SYS_GROUP}' from ${UPDATE_ENGINE_CONFIG}."
+      PLATFORM_SYS_GROUP=$(cat ${UPDATE_ENGINE_CONFIG} | grep '^GROUP=' | cut -f2 -d '=')
+      echo "Using OS group '${PLATFORM_SYS_GROUP}' from ${UPDATE_ENGINE_CONFIG}."
     else
       SYS_GROUP="protonet"
-      echo "No OS group given. Using '${SYS_GROUP}' (default group)."
+      echo "No OS group given. Using '${PLATFORM_SYS_GROUP}' (default group)."
     fi
   else
-    echo "Using OS group '${SYS_GROUP}' from the command line."
+    echo "Using OS group '${PLATFORM_SYS_GROUP}' from the command line."
   fi
 
 	# in case there was an automatic update already running
@@ -77,7 +77,7 @@ function enable_protonet_updates() {
 
 	# configure update source
   echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
-GROUP=$SYS_GROUP
+GROUP=$PLATFORM_SYS_GROUP
 SERVER=https://coreos-update.protorz.net/update
 REBOOT_STRATEGY=off
 EOM
@@ -247,7 +247,7 @@ while [[ $# > 0 ]]; do
       shift
       ;;
     -g|--group)
-      SYS_GROUP="$2"
+      PLATFORM_SYS_GROUP="$2"
       shift
       ;;
     -h|--help)
