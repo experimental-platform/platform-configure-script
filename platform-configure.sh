@@ -54,7 +54,7 @@ function enable_protonet_updates() {
       PLATFORM_SYS_GROUP=$(cat ${UPDATE_ENGINE_CONFIG} | grep '^GROUP=' | cut -f2 -d '=')
       echo "Using OS group '${PLATFORM_SYS_GROUP}' from ${UPDATE_ENGINE_CONFIG}."
     else
-      SYS_GROUP="protonet"
+      PLATFORM_SYS_GROUP="protonet"
       echo "No OS group given. Using '${PLATFORM_SYS_GROUP}' (default group)."
     fi
   else
