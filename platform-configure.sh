@@ -203,8 +203,8 @@ function install_platform() {
   # Complex regexp to find all images names in all service files
   IMAGES=$(awk '!/^\s*[a-zA-Z0-9]+=|\[|^#|^\s*$|^\s*\-|^\s*bundle/ { sub("[^a-zA-Z0-9/:@.-]", "", $1); print $1}' /etc/systemd/system/*.service)
   for IMAGE in $IMAGES; do
-    # download german-shepherd ony if soul is enabled.
-    if [[ "experimentalplatform/german-shepherd" =~ ${IMAGE%:*} ]]; then
+    # download german-shepherd and soul ony if soul is enabled.
+    if [[ "experimentalplatform/german-shepherd experimentalplatform/soul-nginx" =~ ${IMAGE%:*} ]]; then
       if [[ -f "/etc/protonet/soul/enabled" ]]; then
           download_and_verify_image ${IMAGE}
       fi
