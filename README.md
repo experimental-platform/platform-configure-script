@@ -29,7 +29,7 @@ Overview (details follow below):
 
 ### Requirements
 
-* at least 1 GByte of free RAM
+* at least 2 GByte of free RAM
 * roughly 5 GByte of free HD space
 * CoreOS beta channel
 
