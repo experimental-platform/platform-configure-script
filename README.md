@@ -29,7 +29,7 @@ Overview (details follow below):
 
 ### Requirements
 
-* at least 1 GByte of free RAM
+* at least 2 GByte of free RAM
 * roughly 5 GByte of free HD space
 * CoreOS beta channel
 
@@ -52,6 +52,6 @@ Platform installation is based on a running CoreOS instance. To simplify local t
 
 ### Step 3: Install experimental platform
 
-    $ vagrant ssh -c "curl https://raw.githubusercontent.com/experimental-platform/platform-configure-script/master/platform-configure.sh | sudo CHANNEL=alpha PLATFORM_SYS_GROUP=protonet PLATFORM_INSTALL_OSUPDATE=true PLATFORM_INSTALL_REBOOT=true sh"
+    $ vagrant ssh -c "curl https://raw.githubusercontent.com/experimental-platform/platform-configure-script/master/platform-configure.sh | sudo PLATFORM_INSTALL_OSUPDATE=true PLATFORM_INSTALL_REBOOT=true sh"
 
 This step will install the software and then reboot the system. Depending on the network configuration it might not come up on its own, in that case please start it manually with `vagrant up`. A few moments later the experimental platform web interface should be available under [http://paleale.local](http://paleale.local).
