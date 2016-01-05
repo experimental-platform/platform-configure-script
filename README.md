@@ -1,4 +1,4 @@
-# Experimental Platform Configure Script
+# Experimental Platform Installation Script
 
 Experimental Platform is a platform for local application development. It enables developers to `git push` source code to a local machine where it is executed automatically.
 
