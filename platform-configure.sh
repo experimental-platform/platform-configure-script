@@ -21,6 +21,7 @@ CONTAINER_NAME="configure"
 CHANNEL_FILE=/etc/protonet/system/channel
 UPDATE_ENGINE_CONFIG=/etc/coreos/update.conf
 IMAGE_STATE_DIR=/etc/protonet/system/images
+INITIAL_HOSTNAME=""
 
 PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
 PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
@@ -167,6 +168,14 @@ function install_platform() {
   $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
   $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
 
+  mkdir -p /etc/protonet
+  [[ -d /etc/protonet/hostname ]] && rm -rf /etc/protonet/hostname
+  if [[ ! -f /etc/protonet/hostname ]]; then
+    INITIAL_HOSTNAME=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1)
+    echo "setting hostname to $INITIAL_HOSTNAME"
+    echo $INITIAL_HOSTNAME > /etc/protonet/hostname
+  fi
+
   $DOCKER run --rm --name=$CONTAINER_NAME \
               --volume=/etc/:/data/ \
               --volume=/opt/bin/:/host-bin/ \
@@ -222,6 +231,14 @@ function install_platform() {
   if [ "$PLATFORM_INSTALL_OSUPDATE" = true ]; then
     echo "Updating CoreOS system image."
     update_os_image || true
+  fi
+
+  if [[ "$INITIAL_HOSTNAME" != "" ]]; then
+    echo "===================================================================="
+    echo "After the reboot your experimental platform will be reachable via:"
+    echo "http://$INITIAL_HOSTNAME.local"
+    echo "(don't worry, you can change this later)"
+    echo "===================================================================="
   fi
 
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
