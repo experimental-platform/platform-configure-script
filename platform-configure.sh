@@ -210,7 +210,7 @@ function install_platform() {
   # prefetch buildstep. so the first deployment doesn't have to fetch it.
   download_and_verify_image experimentalplatform/buildstep:herokuish
   # Complex regexp to find all images names in all service files
-  IMAGES=$(awk '!/^\s*[a-zA-Z0-9]+=|\[|^#|^\s*$|^\s*\-|^\s*bundle/ { sub("[^a-zA-Z0-9/:@.-]", "", $1); print $1}' /etc/systemd/system/*.service)
+  IMAGES=$(awk '!/^\s*[a-zA-Z0-9]+=|\[|^#|^\s*$|^\s*\-|^\s*bundle/ { sub("[^a-zA-Z0-9/:@.-]", "", $1); print $1}' /etc/systemd/system/*.service | sort | uniq)
   for IMAGE in $IMAGES; do
     # download german-shepherd and soul ony if soul is enabled.
     if [[ "experimentalplatform/german-shepherd experimentalplatform/soul-nginx" =~ ${IMAGE%:*} ]]; then
