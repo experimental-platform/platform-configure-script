@@ -189,6 +189,8 @@ function install_platform() {
   find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
   # timers need to be enabled
   find /etc/systemd/system -maxdepth 1 -name "*.timer" -type f | xargs basename -a | xargs systemctl enable
+  # socket units need to be enabled, if any exist
+  find /etc/systemd/system -maxdepth 1 -name "*.socket" -type f | xargs --no-run-if-empty basename -a | xargs --no-run-if-empty systemctl enable
 
   if [[ ! -f ${CHANNEL_FILE} ]] || [[ ! $(cat ${CHANNEL_FILE}) = "${CHANNEL}" ]]; then
     systemctl stop trigger-update-protonet.path
