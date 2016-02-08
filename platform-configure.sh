@@ -117,6 +117,7 @@ function print_usage() {
   echo -e "\t-c|--channel\tUse specified channel (default 'stable')."
   echo -e "\t-g|--group\tUse specified CoreOS image group (default 'protonet')."
   echo -e "\t-d|--debug\tEnable debug output."
+  echo -e "\t-C|--custom-update\tJust configure for custom protonet system updates."
   echo -e "\t-h|--help\tShow this help text."
 }
 
@@ -270,6 +271,10 @@ while [[ $# > 0 ]]; do
     -g|--group)
       PLATFORM_SYS_GROUP="$2"
       shift
+      ;;
+    -C|--custom-update)
+      enable_protonet_updates
+      exit 0
       ;;
     -h|--help)
       print_usage
