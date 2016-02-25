@@ -39,6 +39,11 @@ fNLAJRPgRI+pXV0O6MdmPtKu5dQNkVGAYm7RWbxZctGxsOArXE43OjqE6kGLVabw
 7QIDAQAB
 -----END PUBLIC KEY-----"
 
+function set_status() {
+  mkdir -p /etc/protonet/system
+  echo "$@" > /etc/protonet/system/configure-script-status
+}
+
 function is_update_key_protonet() {
 	key_path="/usr/share/update_engine/update-payload-key.pub.pem"
   current_digest=$(cat "$key_path" | /usr/bin/sha1sum | cut -f1 -d ' ')
@@ -89,6 +94,8 @@ EOM
 }
 
 function update_os_image() {
+  set_status "osupdate"
+
   # run update and save its exit code
   echo "Forcing system image update"
   update_engine_client -update &>/dev/null | true
@@ -177,6 +184,8 @@ function install_platform() {
     echo $PLATFORM_INITIAL_HOSTNAME > $HOSTNAME_FILE
   fi
 
+  set_status "configuring"
+
   $DOCKER run --rm --name=$CONTAINER_NAME \
               --volume=/etc/:/data/ \
               --volume=/opt/bin/:/host-bin/ \
@@ -214,7 +223,10 @@ function install_platform() {
   download_and_verify_image experimentalplatform/buildstep:herokuish
   # Complex regexp to find all images names in all service files
   IMAGES=$(awk '!/^\s*[a-zA-Z0-9]+=|\[|^#|^\s*$|^\s*\-|^\s*bundle/ { sub("[^a-zA-Z0-9/:@.-]", "", $1); print $1}' /etc/systemd/system/*.service | sort | uniq)
+  IMG_NUMBER=$(echo "$IMAGES" | wc -l)
+  IMG_COUNT=0
   for IMAGE in $IMAGES; do
+    set_status "image $IMG_COUNT/$IMG_NUMBER"
     # download german-shepherd and soul ony if soul is enabled.
     if [[ "experimentalplatform/german-shepherd experimentalplatform/soul-nginx" =~ ${IMAGE%:*} ]]; then
       if [[ -f "/etc/protonet/soul/enabled" ]]; then
@@ -223,7 +235,10 @@ function install_platform() {
     else
       download_and_verify_image ${IMAGE}
     fi
+    IMG_COUNT=$((IMG_COUNT+1))
   done
+
+  set_status "finalizing"
 
   if [ "$PLATFORM_INSTALL_RELOAD" = true ]; then
     echo "Reloading systemctl after update."
@@ -242,12 +257,17 @@ function install_platform() {
   echo "(don't worry, you can change this later)"
   echo "===================================================================="
 
+  trap - SIGINT SIGTERM EXIT
+  set_status "done"
+
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
     echo "Rebooting after update."
     shutdown --reboot 1 "Rebooting system for experimental-platform update."
     exit 0
   fi
 }
+
+trap "set_status 'cancelled'" SIGINT SIGTERM EXIT
 
 while [[ $# > 0 ]]; do
   key="$1"
@@ -291,6 +311,8 @@ if [ "$(id -u)" != "0" ]; then
 	echo "Can not run without root permissions."
 	exit 2
 fi
+
+set_status "preparing"
 
 enable_protonet_updates
 install_platform
