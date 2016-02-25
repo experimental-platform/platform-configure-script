@@ -23,7 +23,7 @@ UPDATE_ENGINE_CONFIG=/etc/coreos/update.conf
 IMAGE_STATE_DIR=/etc/protonet/system/images
 HOSTNAME_FILE=/etc/protonet/hostname
 
-PLATFORM_INITIAL_HOSTNAME=${PLATFORM_INITIAL_HOSTNAME:=$(cat /dev/urandom | tr -dc 'a-z' | fold -w 6 | head -n 1)}
+PLATFORM_INITIAL_HOSTNAME=${PLATFORM_INITIAL_HOSTNAME:=$(dd if=/dev/urandom bs=256 count=1 2>/dev/null | tr -dc 'a-z' | fold -w 6 | head -n 1)}
 PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
 PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
 PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
