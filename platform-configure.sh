@@ -21,7 +21,9 @@ CONTAINER_NAME="configure"
 CHANNEL_FILE=/etc/protonet/system/channel
 UPDATE_ENGINE_CONFIG=/etc/coreos/update.conf
 IMAGE_STATE_DIR=/etc/protonet/system/images
+HOSTNAME_FILE=/etc/protonet/hostname
 
+PLATFORM_INITIAL_HOSTNAME=${PLATFORM_INITIAL_HOSTNAME:=$(dd if=/dev/urandom bs=256 count=1 2>/dev/null | tr -dc 'a-z' | fold -w 6 | head -n 1)}
 PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
 PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
 PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
@@ -37,6 +39,11 @@ fNLAJRPgRI+pXV0O6MdmPtKu5dQNkVGAYm7RWbxZctGxsOArXE43OjqE6kGLVabw
 7QIDAQAB
 -----END PUBLIC KEY-----"
 
+function set_status() {
+  mkdir -p /etc/protonet/system
+  echo "$@" > /etc/protonet/system/configure-script-status
+}
+
 function is_update_key_protonet() {
 	key_path="/usr/share/update_engine/update-payload-key.pub.pem"
   current_digest=$(cat "$key_path" | /usr/bin/sha1sum | cut -f1 -d ' ')
@@ -49,16 +56,16 @@ function is_update_key_protonet() {
 }
 
 function enable_protonet_updates() {
-  if [[ -z "${SYS_GROUP}" ]]; then
+  if [[ -z "${PLATFORM_SYS_GROUP}" ]]; then
     if [ -e ${UPDATE_ENGINE_CONFIG} ]; then
-      SYS_GROUP=$(cat ${UPDATE_ENGINE_CONFIG} | grep '^GROUP=' | cut -f2 -d '=')
-      echo "Using OS group '${SYS_GROUP}' from ${UPDATE_ENGINE_CONFIG}."
+      PLATFORM_SYS_GROUP=$(cat ${UPDATE_ENGINE_CONFIG} | grep '^GROUP=' | cut -f2 -d '=')
+      echo "Using OS group '${PLATFORM_SYS_GROUP}' from ${UPDATE_ENGINE_CONFIG}."
     else
-      SYS_GROUP="protonet"
-      echo "No OS group given. Using '${SYS_GROUP}' (default group)."
+      PLATFORM_SYS_GROUP="protonet"
+      echo "No OS group given. Using '${PLATFORM_SYS_GROUP}' (default group)."
     fi
   else
-    echo "Using OS group '${SYS_GROUP}' from the command line."
+    echo "Using OS group '${PLATFORM_SYS_GROUP}' from the command line."
   fi
 
 	# in case there was an automatic update already running
@@ -77,7 +84,7 @@ function enable_protonet_updates() {
 
 	# configure update source
   echo | tee /etc/coreos/update.conf &>/dev/null <<- EOM
-GROUP=$SYS_GROUP
+GROUP=$PLATFORM_SYS_GROUP
 SERVER=https://coreos-update.protorz.net/update
 REBOOT_STRATEGY=off
 EOM
@@ -87,6 +94,8 @@ EOM
 }
 
 function update_os_image() {
+  set_status "osupdate"
+
   # run update and save its exit code
   echo "Forcing system image update"
   update_engine_client -update &>/dev/null | true
@@ -115,6 +124,7 @@ function print_usage() {
   echo -e "\t-c|--channel\tUse specified channel (default 'stable')."
   echo -e "\t-g|--group\tUse specified CoreOS image group (default 'protonet')."
   echo -e "\t-d|--debug\tEnable debug output."
+  echo -e "\t-C|--custom-update\tJust configure for custom protonet system updates."
   echo -e "\t-h|--help\tShow this help text."
 }
 
@@ -122,15 +132,21 @@ function download_and_verify_image() {
   local image=$1
   $DOCKER tag -f $image "$image-previous" 2>/dev/null || true # do not fail, this is just for backup reason
   $DOCKER pull $image
-  for layer in $(docker history --no-trunc $image | tail -n +2 | awk '{ print $1 }'); do
-    # This is the most stupid way to check if all layer were downloaded correctly.
-    # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
-    # even with output piped to /dev/null.
-    if [[ ! -e /var/lib/docker/overlay/$layer || ! -e /var/lib/docker/graph/$layer ]]; then
-      $DOCKER tag -f "$image-previous" $image 2>/dev/null
-      exit 1
-    fi
-  done
+
+  local driver=$($DOCKER info | grep '^Storage Driver: ' | sed -r 's/^Storage Driver: (.*)/\1/')
+
+  # if using OverlayFS then verify layers
+  if [ "$driver" == "overlay" ]; then
+    for layer in $(docker history --no-trunc $image | tail -n +2 | awk '{ print $1 }'); do
+      # This is the most stupid way to check if all layer were downloaded correctly.
+      # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
+      # even with output piped to /dev/null.
+      if [[ ! -e /var/lib/docker/overlay/$layer || ! -e /var/lib/docker/graph/$layer ]]; then
+        $DOCKER tag -f "$image-previous" $image 2>/dev/null
+        exit 1
+      fi
+    done
+  fi
 
   # TODO: Might wanna add --type=image for good measure once Docker 1.8 hits the CoreOS stable.
   local image_id=$(docker inspect --format '{{.Id}}' $image)
@@ -167,6 +183,15 @@ function install_platform() {
   $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
   $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
 
+  mkdir -p /etc/protonet
+  [[ -d $HOSTNAME_FILE ]] && rm -rf /etc/protonet/hostname
+  if [[ ! -f $HOSTNAME_FILE ]]; then
+    echo "Setting hostname to '$PLATFORM_INITIAL_HOSTNAME'."
+    echo $PLATFORM_INITIAL_HOSTNAME > $HOSTNAME_FILE
+  fi
+
+  set_status "configuring"
+
   $DOCKER run --rm --name=$CONTAINER_NAME \
               --volume=/etc/:/data/ \
               --volume=/opt/bin/:/host-bin/ \
@@ -180,6 +205,8 @@ function install_platform() {
   find /etc/systemd/system -maxdepth 1 -name "*.path" -type f | xargs basename -a | xargs systemctl restart
   # timers need to be enabled
   find /etc/systemd/system -maxdepth 1 -name "*.timer" -type f | xargs basename -a | xargs systemctl enable
+  # socket units need to be enabled, if any exist
+  find /etc/systemd/system -maxdepth 1 -name "*.socket" -type f | xargs --no-run-if-empty basename -a | xargs --no-run-if-empty systemctl enable
 
   if [[ ! -f ${CHANNEL_FILE} ]] || [[ ! $(cat ${CHANNEL_FILE}) = "${CHANNEL}" ]]; then
     systemctl stop trigger-update-protonet.path
@@ -201,13 +228,23 @@ function install_platform() {
   # prefetch buildstep. so the first deployment doesn't have to fetch it.
   download_and_verify_image experimentalplatform/buildstep:herokuish
   # Complex regexp to find all images names in all service files
-  IMAGES=$(grep -hor -i "$REGISTRY\/[a-zA-Z0-9:_-]\+\s\?" /etc/systemd/system/*.service)
+  IMAGES=$(awk '!/^\s*[a-zA-Z0-9]+=|\[|^#|^\s*$|^\s*\-|^\s*bundle/ { sub("[^a-zA-Z0-9/:@.-]", "", $1); print $1}' /etc/systemd/system/*.service | sort | uniq)
+  IMG_NUMBER=$(echo "$IMAGES" | wc -l)
+  IMG_COUNT=0
   for IMAGE in $IMAGES; do
-    # Doesn't work on buildstep as it is build w/ tag "latest" only.
-    if [[ ! ${IMAGE} =~ "experimentalplatform/buildstep" ]]; then
-      download_and_verify_image $IMAGE
+    set_status "image $IMG_COUNT/$IMG_NUMBER"
+    # download german-shepherd and soul ony if soul is enabled.
+    if [[ "experimentalplatform/german-shepherd experimentalplatform/soul-nginx" =~ ${IMAGE%:*} ]]; then
+      if [[ -f "/etc/protonet/soul/enabled" ]]; then
+          download_and_verify_image ${IMAGE}
+      fi
+    else
+      download_and_verify_image ${IMAGE}
     fi
+    IMG_COUNT=$((IMG_COUNT+1))
   done
+
+  set_status "finalizing"
 
   if [ "$PLATFORM_INSTALL_RELOAD" = true ]; then
     echo "Reloading systemctl after update."
@@ -220,12 +257,23 @@ function install_platform() {
     update_os_image || true
   fi
 
+  echo "===================================================================="
+  echo "After the reboot your experimental platform will be reachable via:"
+  echo "http://$(cat $HOSTNAME_FILE).local"
+  echo "(don't worry, you can change this later)"
+  echo "===================================================================="
+
+  trap - SIGINT SIGTERM EXIT
+  set_status "done"
+
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
     echo "Rebooting after update."
     shutdown --reboot 1 "Rebooting system for experimental-platform update."
     exit 0
   fi
 }
+
+trap "set_status 'cancelled'" SIGINT SIGTERM EXIT
 
 while [[ $# > 0 ]]; do
   key="$1"
@@ -247,8 +295,12 @@ while [[ $# > 0 ]]; do
       shift
       ;;
     -g|--group)
-      SYS_GROUP="$2"
+      PLATFORM_SYS_GROUP="$2"
       shift
+      ;;
+    -C|--custom-update)
+      enable_protonet_updates
+      exit 0
       ;;
     -h|--help)
       print_usage
@@ -265,6 +317,8 @@ if [ "$(id -u)" != "0" ]; then
 	echo "Can not run without root permissions."
 	exit 2
 fi
+
+set_status "preparing"
 
 enable_protonet_updates
 install_platform
