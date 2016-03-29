@@ -118,6 +118,7 @@ function install_platform() {
 
     if [[ "${PLATFORM_INSTALL_OSUPDATE}" = true ]]; then
         echo "CoreOS System Update: START"
+        set_status "osupdate"
         if [[ -x ${PLATFORM_BASENAME}/opt/bin/update_os.sh ]]; then
             ${PLATFORM_BASENAME}/opt/bin/update_os.sh && echo "CoreOS System Update: DONE" || echo "CoreOS System Update: ERROR"
         else
