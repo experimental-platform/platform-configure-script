@@ -20,10 +20,12 @@ function set_variables() {
     DOCKER=$(which docker)
     REGISTRY="experimentalplatform"
     CONTAINER_NAME="configure"
-    CHANNEL_FILE=/etc/protonet/system/channel
-    UPDATE_ENGINE_CONFIG=/etc/coreos/update.conf
-    IMAGE_STATE_DIR=/etc/protonet/system/images
-    HOSTNAME_FILE=/etc/protonet/hostname
+    PLATFORM_BASENAME=${PLATFORM_BASENAME:=""}
+
+    CHANNEL_FILE=${PLATFORM_BASENAME}/etc/protonet/system/channel
+    UPDATE_ENGINE_CONFIG=${PLATFORM_BASENAME}/etc/coreos/update.conf
+    IMAGE_STATE_DIR=${PLATFORM_BASENAME}/etc/protonet/system/images
+    HOSTNAME_FILE=${PLATFORM_BASENAME}/etc/protonet/hostname
 
     BLA=$(dd if=/dev/urandom bs=256 count=1 2>/dev/null | tr -dc 'a-z' | fold -w 6 | head -n 1)
     PLATFORM_INITIAL_HOSTNAME=${PLATFORM_INITIAL_HOSTNAME:=${BLA}}
@@ -31,45 +33,12 @@ function set_variables() {
     PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
     PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
     PLATFORM_INSTALL_DEBUG=${PLATFORM_INSTALL_DEBUG:=false}
-
-    PROTONET_PUBKEY="-----BEGIN PUBLIC KEY-----
-    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5CfJQVP2yJlcMu/3/RxD
-    KnOvcxD40VWsDiUn/FDXlcgQWpg/xH2a7LD9bpD4c3+jWtUst+I7ZhL11YiyfQDr
-    Afw9m11RiHtl+fvJfLg8PwuQ25jc5Cf/hLn+NpnFxL4vlifNWljIoIh17j3KE0hj
-    jd/V7435gkIm0eIvTiebn4cposzh74XrlOnsGyTTyPJ4IMcnS3zYdOIAeTKoSMea
-    rUIsXC8jYMQtua8q96eqM3bPsvFLBWRRQoTfRtVSfydNbZp+i1SixVKo4oDz9UmF
-    fNLAJRPgRI+pXV0O6MdmPtKu5dQNkVGAYm7RWbxZctGxsOArXE43OjqE6kGLVabw
-    7QIDAQAB
-    -----END PUBLIC KEY-----"
 }
 
 
 function set_status() {
-    mkdir -p /etc/protonet/system
-    echo "$@" > /etc/protonet/system/configure-script-status
-}
-
-function is_update_key_protonet() {
-    key_path="/usr/share/update_engine/update-payload-key.pub.pem"
-    current_digest=$(cat "$key_path" | /usr/bin/sha1sum | cut -f1 -d ' ')
-    protonet_digest=$(echo "$PROTONET_PUBKEY" | /usr/bin/sha1sum | cut -f1 -d ' ')
-    if [[ "$current_digest" == "$protonet_digest" ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-function prepare_os_update() {
-	# in case there was an automatic update already running
-	update_engine_client -reset_status
-
-	# just in case someone left a key mount
-    umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
-	if ! is_update_key_protonet; then
-        echo "$PROTONET_PUBKEY" > /tmp/protonet-image.pub.pem
-        mount --bind /tmp/protonet-image.pub.pem /usr/share/update_engine/update-payload-key.pub.pem
-  fi
+    mkdir -p ${PLATFORM_BASENAME}/etc/protonet/system
+    echo "$@" > ${PLATFORM_BASENAME}/etc/protonet/system/configure-script-status
 }
 
 
@@ -95,11 +64,11 @@ function download_and_verify_image() {
 
   # if using OverlayFS then verify layers
   if [ "$driver" == "overlay" ]; then
-    for layer in $(docker history --no-trunc $image | tail -n +2 | awk '{ print $1 }'); do
+    for layer in $(${DOCKER} history --no-trunc $image | tail -n +2 | awk '{ print $1 }'); do
       # This is the most stupid way to check if all layer were downloaded correctly.
       # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
       # even with output piped to /dev/null.
-      if [[ ! -e /var/lib/docker/overlay/$layer || ! -e /var/lib/docker/graph/$layer ]]; then
+      if [[ ! -e ${PLATFORM_BASENAME}/var/lib/docker/overlay/$layer || ! -e ${PLATFORM_BASENAME}/var/lib/docker/graph/$layer ]]; then
         $DOCKER tag -f "$image-previous" $image 2>/dev/null
         exit 1
       fi
@@ -107,7 +76,7 @@ function download_and_verify_image() {
   fi
 
   # TODO: Might wanna add --type=image for good measure once Docker 1.8 hits the CoreOS stable.
-  local image_id=$(docker inspect --format '{{.Id}}' $image)
+  local image_id=$(${DOCKER} inspect --format '{{.Id}}' $image)
   image=${image#$REGISTRY/} # remove Registry prefix
 
   mkdir -p $(dirname $IMAGE_STATE_DIR/$image)
@@ -134,20 +103,27 @@ function install_platform() {
     echo "Using '${CHANNEL}' from the command line."
   fi
 
-  prepare_os_update
-
   download_and_verify_image $REGISTRY/configure:${CHANNEL}
 
   # clean up running update task!
   $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
   $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
 
-  mkdir -p /etc/protonet
-  [[ -d $HOSTNAME_FILE ]] && rm -rf /etc/protonet/hostname
+  mkdir -p ${PLATFORM_BASENAME}/etc/protonet
+  [[ -d $HOSTNAME_FILE ]] && rm -rf ${PLATFORM_BASENAME}/etc/protonet/hostname
   if [[ ! -f $HOSTNAME_FILE ]]; then
     echo "Setting hostname to '$PLATFORM_INITIAL_HOSTNAME'."
     echo $PLATFORM_INITIAL_HOSTNAME > $HOSTNAME_FILE
   fi
+
+    if [[ "${PLATFORM_INSTALL_OSUPDATE}" = true ]]; then
+        echo "Updating CoreOS system image."
+        if [[ -x ${PLATFORM_BASENAME}/opt/bin/update_os.sh ]]; then
+            ${PLATFORM_BASENAME}/opt/bin/update_os.sh || true
+        else
+            echo "Updating CoreOS system image."
+        fi
+    fi
 
   set_status "configuring"
   # TODO: /etc/docker and /root/.docker could be mounted from skvs
@@ -158,15 +134,15 @@ function install_platform() {
               --volume=/usr/:/mnt/usr/ \
               --volume=/var/:/mnt/var/ \
               --volume=$(which docker):$(which docker):ro \
-              --volume $(which systemctl):$(which systemctl):ro \
-              --volume $(which update_engine_client):$(which update_engine_client):ro \
-              --volume /dev:/dev:rw \
-              --volume /etc/docker:/etc/docker:ro \
-              --volume /root/.docker:/root/.docker:ro \
-              --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
-              --volume /var/run/dbus:/var/run/dbus:rw \
+              --volume=$(which systemctl):$(which systemctl):ro \
+              --volume=$(which update_engine_client):$(which update_engine_client):ro \
+              --volume=/dev:/dev:rw \
+              --volume=/etc/docker:/etc/docker:ro \
+              --volume=/root/.docker:/root/.docker:ro \
+              --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \
+              --volume=/var/run/dbus:/var/run/dbus:rw \
               --volume=/var/run/docker.sock:/var/run/docker.sock:rw \
-              --volume /var/run/systemd:/var/run/systemd:ro \
+              --volume=/var/run/systemd:/var/run/systemd:ro \
               --volume=/lib64:/lib64:ro \
               -e "CHANNEL_FILE=/mnt${CHANNEL_FILE}" \
               -e "CHANNEL=${CHANNEL}" \
@@ -179,11 +155,6 @@ function install_platform() {
               ${REGISTRY}/configure:${CHANNEL}
   # TODO trap - SIGINT SIGTERM EXIT
   set_status "done"
-
-    # in case we mounted a downloaded key
-    umount /usr/share/update_engine/update-payload-key.pub.pem &>/dev/null || true
-    rm -f /tmp/protonet-image.pub.pem || true
-
 
   if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
     echo "Rebooting after update."
