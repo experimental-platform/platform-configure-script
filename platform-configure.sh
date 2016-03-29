@@ -117,11 +117,11 @@ function install_platform() {
   fi
 
     if [[ "${PLATFORM_INSTALL_OSUPDATE}" = true ]]; then
-        echo "Updating CoreOS system image."
+        echo "CoreOS System Update: START"
         if [[ -x ${PLATFORM_BASENAME}/opt/bin/update_os.sh ]]; then
-            ${PLATFORM_BASENAME}/opt/bin/update_os.sh || true
+            ${PLATFORM_BASENAME}/opt/bin/update_os.sh && echo "CoreOS System Update: DONE" || echo "CoreOS System Update: ERROR"
         else
-            echo "Updating CoreOS system image."
+            echo "CoreOS System Update: Script not found. Please try again  "
         fi
     fi
 
@@ -135,7 +135,6 @@ function install_platform() {
               --volume=/var/:/mnt/var/ \
               --volume=$(which docker):$(which docker):ro \
               --volume=$(which systemctl):$(which systemctl):ro \
-              --volume=$(which update_engine_client):$(which update_engine_client):ro \
               --volume=/dev:/dev:rw \
               --volume=/etc/docker:/etc/docker:ro \
               --volume=/root/.docker:/root/.docker:ro \
