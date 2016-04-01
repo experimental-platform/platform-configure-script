@@ -186,6 +186,7 @@ function parse_options() {
             ;;
             -g|--group)
                 PLATFORM_SYS_GROUP="$2"
+                export PLATFORM_SYS_GROUP
                 shift
             ;;
             -h|--help)
