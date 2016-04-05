@@ -143,7 +143,6 @@ function install_platform() {
               --volume=/var/run/dbus:/var/run/dbus:rw \
               --volume=/var/run/docker.sock:/var/run/docker.sock:rw \
               --volume=/var/run/systemd:/var/run/systemd:ro \
-              --volume=/lib64:/lib64:ro \
               -e "CHANNEL_FILE=/mnt${CHANNEL_FILE}" \
               -e "CHANNEL=${CHANNEL}" \
               -e "IMAGE_STATE_DIR=${IMAGE_STATE_DIR}" \
