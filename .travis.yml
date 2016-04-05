@@ -1,23 +1,35 @@
-branches:
-  only:
-    - master
-script:
-  - >
-    BODY="{ \"request\": {
-      \"message\": \"Triggered by '$TRAVIS_REPO_SLUG'\",
-      \"config\": {
-        \"env\": {
-          \"SERVICE_TAG\": \"development\",
-          \"DEVELOPMENT\": \"development\"
-        }}}}"
-    URL="https://api.travis-ci.org/repo/experimental-platform%2Fplatform-configure/requests"
-    echo "URL: $URL"
-    echo "BODY: $BODY"
-    curl -f -s -X POST \
-      -H "Content-Type: application/json" \
-      -H "Accept: application/json" \
-      -H "Travis-API-Version: 3" \
-      -H "Authorization: token $TRAVIS_TOKEN" \
-      -d "$BODY" \
-      $URL
+sudo: false
 
+install:
+  - git clone https://github.com/sstephenson/bats.git /tmp/bats
+  - mkdir -p /tmp/local
+  - bash /tmp/bats/install.sh /tmp/local
+  - export PATH=$PATH:/tmp/local/bin:$(pwd)
+
+script:
+  - bats --tap tests
+
+after_success:
+  - >
+    if [[ "${TRAVIS_PULL_REQUEST}" = "false" ]] && [[ "${TRAVIS_BRANCH}" = "master" ]]; then
+      echo -e '\n\nTriggering "platform-configure" build as we are on branch "master".\n\n'
+      BODY="{ \"request\": {
+        \"message\": \"Triggered by '$TRAVIS_REPO_SLUG'\",
+        \"config\": {
+          \"env\": {
+            \"SERVICE_TAG\": \"development\",
+            \"DEVELOPMENT\": \"development\"
+          }}}}"
+      URL="https://api.travis-ci.org/repo/experimental-platform%2Fplatform-configure/requests"
+      echo "URL: $URL"
+      echo "BODY: $BODY"
+      curl -f -s -X POST \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Travis-API-Version: 3" \
+        -H "Authorization: token $TRAVIS_TOKEN" \
+        -d "$BODY" \
+        $URL
+    else
+      echo -e "\n\nNot triggering dependant builds for ${TRANVIS_BRANCH}.\n\n"
+    fi
