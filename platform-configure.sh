@@ -18,7 +18,7 @@ set -e
 
 function set_variables() {
     DOCKER=$(which docker)
-    REGISTRY="experimentalplatform"
+    REGISTRY="quay.io/experimentalplatform"
     CONTAINER_NAME="configure"
     PLATFORM_BASENAME=${PLATFORM_BASENAME:=""}
 
