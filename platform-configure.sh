@@ -33,6 +33,11 @@ function set_variables() {
     PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
     PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
     PLATFORM_INSTALL_DEBUG=${PLATFORM_INSTALL_DEBUG:=false}
+
+    # these two are passed to platform-configure image
+    # in order to install a feature-branch for a single service
+    SERVICE_NAME=${SERVICE_NAME:=""}
+    SERVICE_TAG=${SERVICE_TAG:=""}
 }
 
 
@@ -151,6 +156,8 @@ function install_platform() {
               -e "PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE}" \
               -e "PLATFORM_SYS_GROUP=${PLATFORM_SYS_GROUP}" \
               -e "UPDATE_ENGINE_CONFIG=/mnt${UPDATE_ENGINE_CONFIG}" \
+              -e "SERVICE_NAME=${SERVICE_NAME}" \
+              -e "SERVICE_TAG=${SERVICE_TAG}" \
               ${REGISTRY}/configure:${CHANNEL}
   # TODO trap - SIGINT SIGTERM EXIT
   set_status "done"
