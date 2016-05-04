@@ -101,7 +101,7 @@ function install_platform() {
       CHANNEL=$(cat ${CHANNEL_FILE})
       echo "Using channel '${CHANNEL}' from ${CHANNEL_FILE}."
     else
-      CHANNEL="alpha"
+      CHANNEL="soul3"
       echo "No channel given. Using '${CHANNEL}' (default channel)."
     fi
   else
