@@ -134,7 +134,7 @@ function install_platform() {
   set_status "configuring"
   # TODO: /etc/docker and /root/.docker could be mounted from skvs
   $DOCKER run --rm --name=${CONTAINER_NAME} \
-              --cap-add=SYS_ADMIN \
+              --privileged=true \
               --volume=/opt/:/mnt/opt/ \
               --volume=/etc/:/mnt/etc/ \
               --volume=/usr/:/mnt/usr/ \
