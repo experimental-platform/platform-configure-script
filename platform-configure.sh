@@ -159,14 +159,6 @@ function install_platform() {
               -e "SERVICE_NAME=${SERVICE_NAME}" \
               -e "SERVICE_TAG=${SERVICE_TAG}" \
               ${REGISTRY}/configure:${CHANNEL}
-  # TODO trap - SIGINT SIGTERM EXIT
-  set_status "done"
-
-  if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
-    echo "Rebooting after update."
-    shutdown --reboot 1 "Rebooting system for experimental-platform update."
-    exit 0
-  fi
 }
 
 
@@ -222,3 +214,11 @@ trap "set_status 'cancelled'" SIGINT SIGTERM EXIT
 set_variables
 set_status "preparing"
 install_platform
+set_status "done"
+trap - SIGINT SIGTERM EXIT
+
+if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
+  echo "Rebooting after update."
+  shutdown --reboot 1 "Rebooting system for experimental-platform update."
+fi
+
