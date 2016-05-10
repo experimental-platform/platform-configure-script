@@ -27,8 +27,7 @@ function set_variables() {
     IMAGE_STATE_DIR=${PLATFORM_BASENAME}/etc/protonet/system/images
     HOSTNAME_FILE=${PLATFORM_BASENAME}/etc/protonet/hostname
 
-    BLA=$(dd if=/dev/urandom bs=256 count=1 2>/dev/null | tr -dc 'a-z' | fold -w 6 | head -n 1)
-    PLATFORM_INITIAL_HOSTNAME=${PLATFORM_INITIAL_HOSTNAME:=${BLA}}
+    PLATFORM_INITIAL_HOSTNAME=${PLATFORM_INITIAL_HOSTNAME:="protonet"}
     PLATFORM_INSTALL_REBOOT=${PLATFORM_INSTALL_REBOOT:=false}
     PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD:=false}
     PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE:=false}
