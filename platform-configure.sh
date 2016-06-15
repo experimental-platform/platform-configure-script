@@ -132,32 +132,45 @@ function install_platform() {
 
   set_status "configuring"
   # TODO: /etc/docker and /root/.docker could be mounted from skvs
-  $DOCKER run --rm --name=${CONTAINER_NAME} \
-              --privileged=true \
-              --volume=/opt/:/mnt/opt/ \
-              --volume=/etc/:/mnt/etc/ \
-              --volume=/usr/:/mnt/usr/ \
-              --volume=/var/:/mnt/var/ \
-              --volume=$(which docker):$(which docker):ro \
-              --volume=$(which systemctl):$(which systemctl):ro \
-              --volume=/dev:/dev:rw \
-              --volume=/etc/docker:/etc/docker:ro \
-              --volume=/root/.docker:/root/.docker:ro \
-              --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \
-              --volume=/var/run/dbus:/var/run/dbus:rw \
-              --volume=/var/run/docker.sock:/var/run/docker.sock:rw \
-              --volume=/var/run/systemd:/var/run/systemd:ro \
-              -e "CHANNEL_FILE=/mnt${CHANNEL_FILE}" \
-              -e "CHANNEL=${CHANNEL}" \
-              -e "IMAGE_STATE_DIR=${IMAGE_STATE_DIR}" \
-              -e "REGISTRY=${REGISTRY}" \
-              -e "PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD}" \
-              -e "PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE}" \
-              -e "PLATFORM_SYS_GROUP=${PLATFORM_SYS_GROUP}" \
-              -e "UPDATE_ENGINE_CONFIG=/mnt${UPDATE_ENGINE_CONFIG}" \
-              -e "SERVICE_NAME=${SERVICE_NAME}" \
-              -e "SERVICE_TAG=${SERVICE_TAG}" \
-              ${REGISTRY}/configure:${CHANNEL}
+  rkt run --insecure-options=image \
+  --volume opt,kind=host,source=/opt/,readOnly=false \
+  --volume etc,kind=host,source=/etc/,readOnly=false \
+  --volume usr,kind=host,source=/usr/,readOnly=true  \
+  --volume var,kind=host,source=/var/,readOnly=false \
+  --volume dev,kind=host,source=/dev/,readOnly=false \
+  --volume etc-docker,kind=host,source=/etc/docker,readOnly=true \
+  --volume dot-docker,kind=host,source=/root/.docker,readOnly=true \
+  --volume cgroup,kind=host,source=/sys/fs/cgroup,readOnly=true \
+  --volume dbus,kind=host,source=/var/run/dbus,readOnly=false \
+  --volume docker-sock,kind=host,source=/var/run/docker.sock,readOnly=false \
+  --volume systemd,kind=host,source=/var/run/systemd,readOnly=true \
+  --volume dbus,kind=host,source=/var/run/dbus,readOnly=false \
+  --volume docker-bin,kind=host,source=$(which docker),readOnly=true \
+  --volume systemctl-bin,kind=host,source=$(which systemctl),readOnly=true \
+  --mount volume=opt,target=/mnt/opt/ \
+  --mount volume=etc,target=/mnt/etc/ \
+  --mount volume=usr,target=/mnt/usr/ \
+  --mount volume=var,target=/mnt/var/ \
+  --mount volume=dev,target=/mnt/dev/ \
+  --mount volume=etc-docker,target=/etc/docker \
+  --mount volume=dot-docker,target=/root/.docker \
+  --mount volume=cgroup,target=/sys/fs/cgroup \
+  --mount volume=dbus,target=/var/run/dbus \
+  --mount volume=docker-sock,target=/var/run/docker.sock \
+  --mount volume=systemd,target=/var/run/systemd \
+  --mount volume=docker-bin,target=$(which docker) \
+  --mount volume=systemctl-bin,target=$(which systemctl) \
+  --set-env="CHANNEL_FILE=/mnt${CHANNEL_FILE}" \
+  --set-env="CHANNEL=${CHANNEL}" \
+  --set-env="IMAGE_STATE_DIR=${IMAGE_STATE_DIR}" \
+  --set-env="REGISTRY=${REGISTRY}" \
+  --set-env="PLATFORM_INSTALL_RELOAD=${PLATFORM_INSTALL_RELOAD}" \
+  --set-env="PLATFORM_INSTALL_OSUPDATE=${PLATFORM_INSTALL_OSUPDATE}" \
+  --set-env="PLATFORM_SYS_GROUP=${PLATFORM_SYS_GROUP}" \
+  --set-env="UPDATE_ENGINE_CONFIG=/mnt${UPDATE_ENGINE_CONFIG}" \
+  --set-env="SERVICE_NAME=${SERVICE_NAME}" \
+  --set-env="SERVICE_TAG=${SERVICE_TAG}" \
+  protonet.com/platform/cfg:${CHANNEL}
 }
 
 
@@ -220,4 +233,3 @@ if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
   echo "Rebooting after update."
   shutdown --reboot 1 "Rebooting system for experimental-platform update."
 fi
-
