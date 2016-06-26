@@ -107,12 +107,6 @@ function install_platform() {
     echo "Using '${CHANNEL}' from the command line."
   fi
 
-  download_and_verify_image $REGISTRY/configure:${CHANNEL}
-
-  # clean up running update task!
-  $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
-  $DOCKER rm $CONTAINER_NAME 2>/dev/null || true
-
   mkdir -p ${PLATFORM_BASENAME}/etc/protonet
   [[ -d ${HOSTNAME_FILE} ]] && rm -rf ${HOSTNAME_FILE}
   if [[ ! -f ${HOSTNAME_FILE} ]]; then
