@@ -127,6 +127,7 @@ function install_platform() {
   set_status "configuring"
   # TODO: /etc/docker and /root/.docker could be mounted from skvs
   rkt run --insecure-options=image \
+  --dns=8.8.8.8 \
   --volume opt,kind=host,source=/opt/,readOnly=false \
   --volume etc,kind=host,source=/etc/,readOnly=false \
   --volume usr,kind=host,source=/usr/,readOnly=true  \
