@@ -40,6 +40,7 @@ function set_variables() {
     # in order to install a feature-branch for a single service
     SERVICE_NAME=${SERVICE_NAME:=""}
     SERVICE_TAG=${SERVICE_TAG:=""}
+    CHANNEL=${CHANNEL:=""}
 }
 
 
