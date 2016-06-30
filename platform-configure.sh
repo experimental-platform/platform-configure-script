@@ -1,7 +1,10 @@
 #!/bin/bash
-set -e
 
-# Copyright 2015 Protonet GmbH
+set -euo pipefail
+IFS=$'\n\t'
+
+
+# Copyright 2015-2016 Protonet GmbH
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -212,6 +215,7 @@ check_for_root
 trap "set_status 'cancelled'" SIGINT SIGTERM EXIT
 set_variables
 set_status "preparing"
+/opt/bin/button "rainbow" &>/dev/null || true
 install_platform
 set_status "done"
 trap - SIGINT SIGTERM EXIT
