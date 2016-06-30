@@ -41,6 +41,7 @@ function set_variables() {
     SERVICE_NAME=${SERVICE_NAME:=""}
     SERVICE_TAG=${SERVICE_TAG:=""}
     CHANNEL=${CHANNEL:=""}
+    PLATFORM_SYS_GROUP=""
 }
 
 
@@ -63,33 +64,47 @@ function print_usage() {
 }
 
 function download_and_verify_image() {
-  # TODO: DUPLICATED CODE MARK
-  local image=$1
-  $DOCKER tag -f $image "$image-previous" 2>/dev/null || true # do not fail, this is just for backup reason
-  $DOCKER pull $image
-
-  local driver=$($DOCKER info | grep '^Storage Driver: ' | sed -r 's/^Storage Driver: (.*)/\1/')
-
-  # if using OverlayFS then verify layers
-  if [ "$driver" == "overlay" ]; then
-    for layer in $(${DOCKER} history --no-trunc $image | tail -n +2 | awk '{ print $1 }'); do
-      # This is the most stupid way to check if all layer were downloaded correctly.
-      # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
-      # even with output piped to /dev/null.
-      if [[ ! -e ${PLATFORM_BASENAME}/var/lib/docker/overlay/$layer || ! -e ${PLATFORM_BASENAME}/var/lib/docker/graph/$layer ]]; then
-        $DOCKER tag -f "$image-previous" $image 2>/dev/null
-        exit 1
-      fi
+    # TODO: DUPLICATED CODE MARK
+    local image
+    image=$1
+    echo -ne "\t Image ${image}..."
+    RETRIES=0
+    MAXRETRIES=10
+    while ( ! $DOCKER pull $image &>/dev/null ) && [ $RETRIES -ne $MAXRETRIES ]; do
+        sleep 1
+        echo -n " Pull failed, retrying.... "
+        RETRIES=$(($RETRIES+1))
     done
-  fi
 
-  # TODO: Might wanna add --type=image for good measure once Docker 1.8 hits the CoreOS stable.
-  local image_id=$(${DOCKER} inspect --format '{{.Id}}' $image)
-  image=${image#$REGISTRY/} # remove Registry prefix
+    if [ $RETRIES -eq $MAXRETRIES ]; then
+      echo " Failed to retrieve $image"
+      exit 1
+    fi
 
-  mkdir -p $(dirname $IMAGE_STATE_DIR/$image)
-  echo $image_id > $IMAGE_STATE_DIR/$image
+    local driver=$(${DOCKER} info | grep '^Storage Driver: ' | sed -r 's/^Storage Driver: (.*)/\1/')
+    # if using OverlayFS then verify layers
+    if [ "${driver}" == "overlay" ]; then
+        # TODO: this basically works with ZFS too, it just has slightly different path names
+        for layer in $(${DOCKER} history --no-trunc ${image} | tail -n +2 | awk '{ print $1 }'); do
+            # This is the most stupid way to check if all layer were downloaded correctly.
+            # But it is the fastest one. The docker save command takes about 30 Minutes for all images,
+            # even with output piped to /dev/null.
+            if [[ ! -e ${PLATFORM_BASENAME}/var/lib/docker/overlay/${layer} || ! -e ${PLATFORM_BASENAME}/var/lib/docker/graph/${layer} ]]; then
+                echo "Image '${image}' arrived broken"
+                exit 1
+            fi
+        done
+    fi
+
+    # TODO: Might wanna add --type=image for good measure once Docker 1.8 hits the CoreOS stable.
+    local image_id=$(${DOCKER} inspect --format '{{.Id}}' ${image})
+    image=${image#$REGISTRY/} # remove Registry prefix
+
+    mkdir -p $(dirname ${IMAGE_STATE_DIR}/${image})
+    echo $image_id > ${IMAGE_STATE_DIR}/${image}
+    echo "DONE."
 }
+
 
 function install_platform() {
 
