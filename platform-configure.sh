@@ -63,6 +63,11 @@ function print_usage() {
     echo -e "\t-h|--help\tShow this help text."
 }
 
+function get_configure_tag() {
+    local CHANNEL="$1"
+    curl --silent --fail "https://raw.githubusercontent.com/protonet/builds/master/$CHANNEL.json" | jq '.[0].images["quay.io/experimentalplatform/configure"]' --raw-output
+}
+
 function download_and_verify_image() {
     # TODO: DUPLICATED CODE MARK
     local image
@@ -126,7 +131,9 @@ function install_platform() {
     echo "Using '${CHANNEL}' from the command line."
   fi
 
-  download_and_verify_image $REGISTRY/configure:${CHANNEL}
+  CONFIGURE_TAG="$(get_configure_tag ${CHANNEL})"
+
+  download_and_verify_image $REGISTRY/configure:${CONFIGURE_TAG}
 
   # clean up running update task!
   $DOCKER kill $CONTAINER_NAME 2>/dev/null || true
@@ -176,7 +183,7 @@ function install_platform() {
               -e "UPDATE_ENGINE_CONFIG=/mnt${UPDATE_ENGINE_CONFIG}" \
               -e "SERVICE_NAME=${SERVICE_NAME}" \
               -e "SERVICE_TAG=${SERVICE_TAG}" \
-              ${REGISTRY}/configure:${CHANNEL}
+              ${REGISTRY}/configure:${CONFIGURE_TAG}
 }
 
 
@@ -240,4 +247,3 @@ if [ "$PLATFORM_INSTALL_REBOOT" = true ]; then
   echo "Rebooting after update."
   shutdown --reboot 1 "Rebooting system for experimental-platform update."
 fi
-
