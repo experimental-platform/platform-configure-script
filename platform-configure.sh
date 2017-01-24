@@ -45,9 +45,39 @@ function set_variables() {
 }
 
 
+function is_float() {
+	[ -z "$@" ] && return 1
+	grep -q -E '^\d*(\.\d+)?$' <<< "$@"
+}
+
+
+function build_status_json() {
+	local STATUS PROGRESS WHAT JSON
+
+	# status
+	JSON="$(jq --arg status "$1" '.status = $status' -n)"
+
+	# progress
+	if [ $# -gt 1 ]; then
+		if is_float "$2"; then
+			JSON="$(jq --argjson progress "$2" '.progress = $progress' <<< "$JSON")"
+		else
+			JSON="$(jq --argjson progress null '.progress = $progress' <<< "$JSON")"
+		fi
+	fi
+
+	# the "what"
+	if [ $# -gt 2 ]; then
+		JSON="$(jq --arg what "$3" '.what = $what' <<< "$JSON")"
+	fi
+
+	echo "$JSON"
+}
+
+
 function set_status() {
     mkdir -p ${PLATFORM_BASENAME}/etc/protonet/system
-    echo "$@" > ${PLATFORM_BASENAME}/etc/protonet/system/configure-script-status
+    build_status_json $@ > ${PLATFORM_BASENAME}/etc/protonet/system/configure-script-status
 }
 
 
