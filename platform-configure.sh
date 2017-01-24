@@ -47,7 +47,7 @@ function set_variables() {
 
 function is_float() {
 	[ -z "$@" ] && return 1
-	grep -q -E '^\d*(\.\d+)?$' <<< "$@"
+	grep -q -P '^\d*(\.\d+)?$' <<< "$@"
 }
 
 
@@ -163,6 +163,7 @@ function install_platform() {
 
   CONFIGURE_TAG="$(get_configure_tag ${CHANNEL})"
 
+  set_status "downloading_configure"
   download_and_verify_image $REGISTRY/configure:${CONFIGURE_TAG}
 
   # clean up running update task!
